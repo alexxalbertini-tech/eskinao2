@@ -21,19 +21,22 @@ service cloud.firestore {
       );
     }
 
-    // Helper for shared collections based on userId field
-    function canAccessBusinessData() {
-      return isSignedIn();
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'tipo', 'ativo']) &&
+             data.email is string &&
+             data.tipo in ['admin', 'funcionario'] &&
+             data.ativo is bool;
     }
 
     // Users
     match /usuarios/{userId} {
       allow read: if isSignedIn();
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) || isAdmin();
     }
 
-    // Shared collections
+    // Shared collections - allowing reads/writes for authenticated users
+    // In production, these should be locked down to relevant businessId if multi-tenant
     match /produtos/{id} {
       allow read: if isSignedIn();
       allow write: if isSignedIn(); 

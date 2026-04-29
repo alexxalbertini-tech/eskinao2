@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, db, doc, getDoc, setDoc, query, collection, where, limit, getDocs } from './lib/firebase';
+import { auth, db, doc, getDoc, setDoc, query, collection, where, limit, getDocs, serverTimestamp } from './lib/firebase';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import Inventory from './components/Inventory';
@@ -31,25 +31,26 @@ export default function App() {
           const adminEmail = 'eskinaoservefest@gmail.com';
           const isMainAdmin = firebaseUser.email?.toLowerCase() === adminEmail;
 
-          // Define businessId first
+          // Define businessId first (Legacy support or single business mode)
           let currentBusinessId = firebaseUser.uid;
           
           if (isMainAdmin) {
             setBusinessId(firebaseUser.uid);
           } else {
-            console.log("Fetching business master record...");
-            const adminQuery = query(collection(db, 'usuarios'), where('email', '==', adminEmail), limit(1));
-            const adminSnap = await getDocs(adminQuery);
-            if (!adminSnap.empty) {
-              currentBusinessId = adminSnap.docs[0].id;
-              setBusinessId(currentBusinessId);
-            } else {
-              setBusinessId(firebaseUser.uid);
+            // Non-admins look for the main admin's UID as businessId
+            try {
+              const adminQuery = query(collection(db, 'usuarios'), where('email', '==', adminEmail), limit(1));
+              const adminSnap = await getDocs(adminQuery);
+              if (!adminSnap.empty) {
+                currentBusinessId = adminSnap.docs[0].id;
+              }
+            } catch (err) {
+              console.warn("Could not fetch admin record for businessId, using own UID fallback:", err);
             }
+            setBusinessId(currentBusinessId);
           }
 
-          // Fetch/Create user document
-          console.log("Verifying user profile in Firestore...");
+          // Fetch or Create user profile
           const userRef = doc(db, 'usuarios', firebaseUser.uid);
           const userSnap = await getDoc(userRef);
           
@@ -57,29 +58,26 @@ export default function App() {
             const userData = userSnap.data();
             setRole(userData.tipo);
             
-            // Sync admin role if necessary
+            // Sync admin role if restricted email logs in
             if (isMainAdmin && userData.tipo !== 'admin') {
-              console.log("Updating admin role sync...");
               await setDoc(userRef, { tipo: 'admin' }, { merge: true });
               setRole('admin');
             }
           } else {
-            console.log("Creating new user profile record...");
-            const newTipo = isMainAdmin ? 'admin' : 'funcionario';
+            const newRole = isMainAdmin ? 'admin' : 'funcionario';
             const profileData = {
               nome: firebaseUser.displayName || (isMainAdmin ? 'ADMINISTRADOR' : 'FUNCIONÁRIO'),
               email: firebaseUser.email,
-              tipo: newTipo,
-              criadoEm: new Date().toISOString(),
+              tipo: newRole,
               ativo: true,
-              lastLogin: new Date().toISOString()
+              criadoEm: serverTimestamp(),
+              lastLogin: serverTimestamp()
             };
             await setDoc(userRef, profileData);
-            setRole(newTipo);
+            setRole(newRole);
           }
         } catch (error) {
-          console.error("Critical error in user initialization:", error);
-          // Safety defaults to prevent blank screens
+          console.error("Profile initialization error:", error);
           setRole('funcionario');
           setBusinessId(firebaseUser.uid);
         }

@@ -147,9 +147,9 @@ export default function Login() {
       return 'A senha deve ter no mínimo 6 caracteres.';
     }
 
-    if (errorStr === 'preencha todos os campos.') return 'Preencha todos os campos para continuar.';
+    if (errorStr === 'preencha todos os campos para continuar.') return errorStr;
     
-    return 'Erro ao acessar o sistema. Verifique os dados ou contate o suporte.';
+    return `Falha na autenticação: ${code || 'Erro desconhecido'}. Verifique sua conexão ou contate o suporte.`;
   };
 
   return (
