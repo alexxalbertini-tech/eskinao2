@@ -49,6 +49,9 @@ export default function Inventory({ businessId }: { role?: string | null, busine
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -76,8 +79,34 @@ export default function Inventory({ businessId }: { role?: string | null, busine
     e.preventDefault();
     if (!businessId) return;
 
+    // LIMPEZA E VALIDAÇÃO DE DADOS
+    const quantity = Number(formData.quantity);
+    const costPrice = Number(formData.costPrice);
+    const salePrice = Number(formData.salePrice);
+    const alertThreshold = Number(formData.alertThreshold);
+
+    if (isNaN(quantity) || isNaN(costPrice) || isNaN(salePrice)) {
+      setError("Por favor, insira valores numéricos válidos.");
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      setError("O nome do produto é obrigatório.");
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
     const data = { 
-      ...formData, 
+      name: formData.name.trim().toUpperCase(),
+      category: formData.category,
+      quantity: quantity,
+      costPrice: costPrice,
+      salePrice: salePrice,
+      supplier: formData.supplier.trim() || 'Não Informado',
+      alertThreshold: alertThreshold,
       userId: businessId,
       updatedBy: auth.currentUser?.uid,
       updatedAt: new Date().toISOString() 
@@ -86,17 +115,28 @@ export default function Inventory({ businessId }: { role?: string | null, busine
     try {
       if (editingProduct) {
         await updateDoc(doc(db, 'produtos', editingProduct.id), data);
+        setSuccessMessage("Produto atualizado com sucesso!");
       } else {
         await addDoc(collection(db, 'produtos'), {
           ...data,
           createdBy: auth.currentUser?.uid,
           createdAt: new Date().toISOString()
         });
+        setSuccessMessage("Produto adicionado com sucesso!");
       }
-      setModalOpen(false);
-      resetForm();
-    } catch (error) {
-      console.error("Erro ao salvar produto:", error);
+      
+      // Auto-fechar modal após sucesso (opcional, mas bom feedback)
+      setTimeout(() => {
+        setModalOpen(false);
+        setSuccessMessage(null);
+        resetForm();
+      }, 1500);
+
+    } catch (err: any) {
+      console.error("Erro ao salvar produto:", err);
+      setError("Erro ao salvar no banco de dados. Verifique sua conexão.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -295,7 +335,23 @@ export default function Inventory({ businessId }: { role?: string | null, busine
                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                 <form onSubmit={handleSubmit} className="space-y-6">
+                   {error && (
+                     <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex items-center gap-3 text-rose-500">
+                        <AlertCircle className="w-5 h-5" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{error}</span>
+                     </motion.div>
+                   )}
+
+                   {successMessage && (
+                     <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-3 text-emerald-500">
+                        <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                           <Plus className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{successMessage}</span>
+                     </motion.div>
+                   )}
+
                    <div className="space-y-2">
                       <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-2">NOME DO ITEM</span>
                       <input 
@@ -353,9 +409,20 @@ export default function Inventory({ businessId }: { role?: string | null, busine
                    <div className="pt-4">
                       <button 
                         type="submit"
-                        className="w-full bg-brand-red text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-[0.98] transition-all border-t border-white/10"
+                        disabled={isSaving}
+                        className={cn(
+                          "w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-[0.98] transition-all border-t border-white/10 flex items-center justify-center gap-3",
+                          isSaving ? "bg-zinc-800 text-zinc-500" : "bg-brand-red text-white"
+                        )}
                       >
-                        {editingProduct ? 'ATUALIZAR' : 'CONCLUIR'}
+                        {isSaving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            SALVANDO...
+                          </>
+                        ) : (
+                          editingProduct ? 'ATUALIZAR PRODUTO' : 'CADASTRAR PRODUTO'
+                        )}
                       </button>
                    </div>
                 </form>
