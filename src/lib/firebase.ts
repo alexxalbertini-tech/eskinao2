@@ -29,7 +29,7 @@ import {
 } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCK7Ukv-Vnvkx1Zo7R4BvnPUXF1TZua_Wk",
+  apiKey: "AIzaSyCK7Ukw-Vnwkx1Zo7R4BvnPUXF1TZua_Wk",
   authDomain: "eskinao2.firebaseapp.com",
   projectId: "eskinao2",
   storageBucket: "eskinao2.firebasestorage.app",
