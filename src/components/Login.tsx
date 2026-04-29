@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   auth, 
   signInWithEmailAndPassword, 
@@ -23,10 +23,39 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      if (!email.includes('@')) {
+        throw { code: 'auth/invalid-email' };
+      }
+
+      const adminEmail = 'eskinaoservefest@gmail.com';
+      const adminPass = 'Eskinao@2026';
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        setSuccess('Acesso concedido! Redirecionando...');
+      } catch (logErr: any) {
+        // Special case: If it's the requested admin and it doesn't exist, create it
+        if (email.toLowerCase() === adminEmail && (logErr.code === 'auth/user-not-found' || logErr.code === 'auth/invalid-credential')) {
+          try {
+            // Check if password matches the requested default password for auto-creation
+            if (password === adminPass) {
+              await createUserWithEmailAndPassword(auth, email, password);
+              setSuccess('Administrador padrão criado e logado com sucesso!');
+            } else {
+              throw logErr; // Wrong password for existing or attempt with wrong pass for new admin
+            }
+          } catch (regErr: any) {
+             throw regErr;
+          }
+        } else {
+          throw logErr;
+        }
+      }
     } catch (err: any) {
-      setError(translateError(err.code));
+      console.error("Login error:", err);
+      setError(translateError(err.code || err.message));
     } finally {
       setLoading(false);
     }
@@ -36,11 +65,17 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
+      if (password.length < 6) {
+        throw { code: 'auth/weak-password' };
+      }
       await createUserWithEmailAndPassword(auth, email, password);
+      setSuccess('Conta criada com sucesso! Bem-vindo.');
       // App.tsx handles the profile creation
     } catch (err: any) {
-      setError(translateError(err.code));
+      console.error("Registration error:", err);
+      setError(translateError(err.code || err.message));
     } finally {
       setLoading(false);
     }
@@ -62,14 +97,35 @@ export default function Login() {
   };
 
   const translateError = (code: string) => {
-    switch (code) {
-      case 'auth/user-not-found': return 'Usuário não encontrado.';
-      case 'auth/wrong-password': return 'Senha incorreta.';
-      case 'auth/email-already-in-use': return 'Este e-mail já está em uso.';
-      case 'auth/weak-password': return 'A senha deve ter pelo menos 6 caracteres.';
-      case 'auth/invalid-email': return 'E-mail inválido.';
-      default: return 'Ocorreu um erro ao tentar entrar. Tente novamente.';
+    const errorStr = String(code).toLowerCase();
+    console.warn("Auth Error Captured:", errorStr);
+
+    if (errorStr.includes('invalid-credential') || errorStr.includes('wrong-password') || errorStr.includes('user-not-found')) {
+      return 'E-mail ou senha incorretos. Verifique seus dados.';
     }
+    if (errorStr.includes('email-already-in-use')) {
+      return 'Este e-mail já está sendo usado em outra conta.';
+    }
+    if (errorStr.includes('weak-password')) {
+      return 'Segurança baixa: a senha deve ter no mínimo 6 caracteres.';
+    }
+    if (errorStr.includes('invalid-email')) {
+      return 'O formato do e-mail digitado não é válido.';
+    }
+    if (errorStr.includes('network-request-failed')) {
+      return 'Erro de conexão: Não conseguimos alcançar o servidor. Verifique sua internet.';
+    }
+    if (errorStr.includes('too-many-requests')) {
+      return 'Muitas tentativas malsucedidas. Tente novamente em alguns minutos.';
+    }
+    if (errorStr.includes('operation-not-allowed')) {
+      return 'O login por e-mail/senha não está habilitado no Firebase.';
+    }
+    if (errorStr.includes('user-disabled')) {
+      return 'Esta conta foi desativada pelo administrador.';
+    }
+    
+    return 'Ocorreu um erro inesperado. Verifique os dados e tente novamente.';
   };
 
   return (

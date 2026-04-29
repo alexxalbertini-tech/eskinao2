@@ -20,7 +20,8 @@ import {
   Plus, 
   PlusCircle, 
   Grip,
-  Truck
+  Truck,
+  LayoutDashboard
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatCurrency, cn } from '../lib/utils';

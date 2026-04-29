@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
   getAuth, 
   signInWithEmailAndPassword, 
@@ -28,7 +28,7 @@ import {
 } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "COLE_AQUI_MINHA_APIKEY",
+  apiKey: "AIzaSyCK7Ukv-Vnvkx1Zo7R4BvnPUXF1TZua_Wk",
   authDomain: "eskinao2.firebaseapp.com",
   projectId: "eskinao2",
   storageBucket: "eskinao2.firebasestorage.app",
@@ -36,7 +36,7 @@ const firebaseConfig = {
   appId: "1:812443002634:web:74ad07098727f3969dbcf3"
 };
 
-const app = initializeApp(firebaseConfig);
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 

@@ -27,10 +27,10 @@ export default function App() {
         setUser(firebaseUser);
         
         try {
-          const adminEmail = 'alexalbertina@gmail.com';
+          const adminEmail = 'eskinaoservefest@gmail.com';
           const isMainAdmin = firebaseUser.email?.toLowerCase() === adminEmail;
 
-          // Find business master ID (Alex's UID)
+          // Find business master ID (admin's UID)
           if (isMainAdmin) {
             setBusinessId(firebaseUser.uid);
           } else {
@@ -39,7 +39,9 @@ export default function App() {
             if (!adminSnap.empty) {
               setBusinessId(adminSnap.docs[0].id);
             } else {
-              // Admin not found in DB yet, fallback to own UID for now (will fix itself once admin logs in)
+              // Admin not found in DB yet, fallback to own UID if no admin exists
+              // This ensures new users can still operate basic features if the admin haven't logged in yet
+              // but restricted to their own data
               setBusinessId(firebaseUser.uid);
             }
           }
@@ -49,10 +51,15 @@ export default function App() {
           
           if (userSnap.exists()) {
             setRole(userSnap.data().tipo);
+            // Ensure admin stays admin even if manually changed in DB incorrectly
+            if (isMainAdmin && userSnap.data().tipo !== 'admin') {
+              await setDoc(userRef, { ...userSnap.data(), tipo: 'admin' }, { merge: true });
+              setRole('admin');
+            }
           } else {
             const newTipo = isMainAdmin ? 'admin' : 'funcionario';
             await setDoc(userRef, {
-              nome: firebaseUser.displayName || 'USUÁRIO',
+              nome: firebaseUser.displayName || (isMainAdmin ? 'ADMINISTRADOR' : 'FUNCIONÁRIO'),
               email: firebaseUser.email,
               tipo: newTipo,
               criadoEm: new Date().toISOString(),
