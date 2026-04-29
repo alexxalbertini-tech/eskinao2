@@ -1,0 +1,132 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "App users and their roles",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "staff"] },
+        "name": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    },
+    "Delivery": {
+      "title": "Delivery",
+      "description": "Delivery orders tracking",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "address": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "preparing", "shipped", "delivered", "cancelled"] },
+        "driverId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "clientName", "address", "status", "total"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial entries and exits",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense", "sale"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "paymentMethod": { "type": "string", "enum": ["pix", "cash", "card", "credit"] },
+        "relatedId": { "type": "string", "description": "ID of associated sale or rental" }
+      },
+      "required": ["userId", "type", "amount", "date"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Inventory items",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["Cervejas", "Bebidas quentes", "Refrigerantes", "Gelo", "Salgados", "Doces", "Outros"] },
+        "quantity": { "type": "number" },
+        "costPrice": { "type": "number" },
+        "salePrice": { "type": "number" },
+        "supplier": { "type": "string" },
+        "alertThreshold": { "type": "number" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["userId", "name", "category", "quantity", "costPrice", "salePrice"]
+    },
+    "Rental": {
+      "title": "Rental",
+      "description": "Equipment leases",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "total": { "type": "number" },
+        "deposit": { "type": "number" },
+        "deliveryDate": { "type": "string", "format": "date-time" },
+        "returnDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "returned"] },
+        "observations": { "type": "string" }
+      },
+      "required": ["userId", "clientName", "total", "deliveryDate", "status"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Customer database",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "observations": { "type": "string" }
+      },
+      "required": ["userId", "name"]
+    }
+  },
+  "firestore": {
+    "/usuarios/{userId}": {
+      "schema": "User",
+      "description": "Store user roles"
+    },
+    "/entregas/{deliveryId}": {
+      "schema": "Delivery",
+      "description": "Store delivery orders"
+    },
+    "/caixa/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Store financial records"
+    },
+    "/produtos/{productId}": {
+      "schema": "Product",
+      "description": "Store inventory items"
+    },
+    "/alugueis/{rentalId}": {
+      "schema": "Rental",
+      "description": "Store rental records"
+    },
+    "/clientes/{clientId}": {
+      "schema": "Client",
+      "description": "Store customer records"
+    },
+    "/vendas/{saleId}": {
+      "schema": "Transaction", 
+      "description": "Store detailed sales"
+    },
+    "/orcamentos/{quoteId}": {
+      "schema": "Delivery",
+      "description": "Store generated quotes"
+    }
+  }
+}
