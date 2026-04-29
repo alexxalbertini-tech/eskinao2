@@ -61,7 +61,25 @@ export default function Quotes({ role, businessId }: { role?: string | null, bus
 
   const total = cart.reduce((acc, item) => acc + (item.salePrice * item.quantity), 0);
 
-  const generatePDF = () => {
+  const saveQuoteToFirestore = async () => {
+    if (!businessId || cart.length === 0) return;
+    try {
+      await addDoc(collection(db, 'orcamentos'), {
+        userId: businessId,
+        clientName: clientInfo.name,
+        clientPhone: clientInfo.phone,
+        items: cart.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.salePrice })),
+        total,
+        createdBy: auth.currentUser?.uid,
+        createdAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("Error saving quote:", err);
+    }
+  };
+
+  const generatePDF = async () => {
+    await saveQuoteToFirestore();
     const doc = new jsPDF() as any;
     
     // Header
@@ -116,7 +134,8 @@ export default function Quotes({ role, businessId }: { role?: string | null, bus
     doc.save(`orcamento_${clientInfo.name.replace(/\s+/g, '_')}.pdf`);
   };
 
-  const sendWhatsApp = () => {
+  const sendWhatsApp = async () => {
+    await saveQuoteToFirestore();
     let message = `*ORÇAMENTO - ESKINÃO SERV FEST 2*\n\n`;
     message += `*Cliente:* ${clientInfo.name}\n`;
     message += `*Data:* ${new Date().toLocaleDateString('pt-BR')}\n\n`;

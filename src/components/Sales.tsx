@@ -116,6 +116,18 @@ export default function Sales({ role, businessId }: { role?: string | null, busi
         await updateDoc(productRef, {
           quantity: original.quantity - item.quantity
         });
+
+        // Log Stock Movement Out
+        await addDoc(collection(db, 'estoque'), {
+          userId: businessId,
+          productId: item.id,
+          productName: item.name,
+          quantity: item.quantity,
+          type: 'out',
+          totalSale: item.salePrice * item.quantity,
+          createdBy: auth.currentUser?.uid,
+          date: new Date().toISOString()
+        });
       }
 
       setCart([]);

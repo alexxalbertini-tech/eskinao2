@@ -3,7 +3,8 @@ import {
   auth, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  sendPasswordResetEmail 
+  sendPasswordResetEmail,
+  updateProfile
 } from '../lib/firebase';
 import { LogIn, Key, Mail, UserPlus, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -36,15 +37,28 @@ export default function Login() {
         await signInWithEmailAndPassword(auth, email, password);
         setSuccess('Acesso concedido! Redirecionando...');
       } catch (logErr: any) {
-        // Special case: If it's the requested admin and it doesn't exist, create it
-        if (email.toLowerCase() === adminEmail && (logErr.code === 'auth/user-not-found' || logErr.code === 'auth/invalid-credential')) {
+        const errorStr = String(logErr.code || logErr.message).toLowerCase();
+        console.error("Login attempt technical error:", logErr);
+
+        // Special case: If it's the requested admin and it doesn't exist
+        if (email.toLowerCase() === adminEmail && (errorStr.includes('user-not-found') || errorStr.includes('invalid-credential') || errorStr.includes('invalid-employee-record'))) {
           try {
-            // Check if password matches the requested default password for auto-creation
             if (password === adminPass) {
-              await createUserWithEmailAndPassword(auth, email, password);
-              setSuccess('Administrador padrão criado e logado com sucesso!');
+              const userCred = await createUserWithEmailAndPassword(auth, email, password);
+              await updateProfile(userCred.user, { displayName: 'ADMINISTRADOR' });
+              setSuccess('Administrador padrão configurado e logado!');
             } else {
-              throw logErr; // Wrong password for existing or attempt with wrong pass for new admin
+              // It was likely just a wrong password for an existing admin, 
+              // but we try to create it anyway to be sure. 
+              // If it fails with email-already-in-use, then it's definitely a wrong password.
+              try {
+                await createUserWithEmailAndPassword(auth, email, password);
+              } catch (regErr: any) {
+                if (String(regErr.code).includes('email-already-in-use')) {
+                  throw logErr; // Throw original login error (likely wrong password)
+                }
+                throw regErr;
+              }
             }
           } catch (regErr: any) {
              throw regErr;
@@ -54,7 +68,7 @@ export default function Login() {
         }
       }
     } catch (err: any) {
-      console.error("Login error:", err);
+      console.error("Login final error:", err);
       setError(translateError(err.code || err.message));
     } finally {
       setLoading(false);
@@ -70,9 +84,11 @@ export default function Login() {
       if (password.length < 6) {
         throw { code: 'auth/weak-password' };
       }
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      if (name) {
+        await updateProfile(userCred.user, { displayName: name });
+      }
       setSuccess('Conta criada com sucesso! Bem-vindo.');
-      // App.tsx handles the profile creation
     } catch (err: any) {
       console.error("Registration error:", err);
       setError(translateError(err.code || err.message));
@@ -106,6 +122,9 @@ export default function Login() {
     if (errorStr.includes('email-already-in-use')) {
       return 'Este e-mail já está sendo usado em outra conta.';
     }
+    if (errorStr.includes('unauthorized-domain')) {
+      return 'Domínio não autorizado: Este link não é permitido para login. Configure no Firebase.';
+    }
     if (errorStr.includes('weak-password')) {
       return 'Segurança baixa: a senha deve ter no mínimo 6 caracteres.';
     }
@@ -125,7 +144,7 @@ export default function Login() {
       return 'Esta conta foi desativada pelo administrador.';
     }
     
-    return 'Ocorreu um erro inesperado. Verifique os dados e tente novamente.';
+    return 'Erro ao acessar o sistema. Verifique os dados ou contate o suporte.';
   };
 
   return (

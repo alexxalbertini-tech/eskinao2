@@ -69,6 +69,18 @@ export default function Inventory({ role, businessId }: { role?: string | null, 
         quantity: (product.quantity || 0) + restockData.quantity
       });
 
+      // Log Stock Movement
+      await addDoc(collection(db, 'estoque'), {
+        userId: businessId,
+        productId: restockData.productId,
+        productName: product.name,
+        quantity: restockData.quantity,
+        type: 'in',
+        totalCost: restockData.totalCost,
+        createdBy: auth.currentUser?.uid,
+        date: new Date().toISOString()
+      });
+
       // Log Expense
       await addDoc(collection(db, 'caixa'), {
         userId: businessId,

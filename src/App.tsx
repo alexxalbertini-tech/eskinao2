@@ -23,6 +23,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
         setUser(firebaseUser);
         
@@ -31,17 +32,19 @@ export default function App() {
           const isMainAdmin = firebaseUser.email?.toLowerCase() === adminEmail;
 
           // Find business master ID (admin's UID)
+          let currentBusinessId = firebaseUser.uid;
+          
           if (isMainAdmin) {
+            currentBusinessId = firebaseUser.uid;
             setBusinessId(firebaseUser.uid);
           } else {
             const adminQuery = query(collection(db, 'usuarios'), where('email', '==', adminEmail), limit(1));
             const adminSnap = await getDocs(adminQuery);
             if (!adminSnap.empty) {
-              setBusinessId(adminSnap.docs[0].id);
+              currentBusinessId = adminSnap.docs[0].id;
+              setBusinessId(currentBusinessId);
             } else {
-              // Admin not found in DB yet, fallback to own UID if no admin exists
-              // This ensures new users can still operate basic features if the admin haven't logged in yet
-              // but restricted to their own data
+              // Admin not found in DB yet, use own UID as temporary businessId
               setBusinessId(firebaseUser.uid);
             }
           }
@@ -51,9 +54,9 @@ export default function App() {
           
           if (userSnap.exists()) {
             setRole(userSnap.data().tipo);
-            // Ensure admin stays admin even if manually changed in DB incorrectly
+            // Ensure admin stays admin
             if (isMainAdmin && userSnap.data().tipo !== 'admin') {
-              await setDoc(userRef, { ...userSnap.data(), tipo: 'admin' }, { merge: true });
+              await setDoc(userRef, { tipo: 'admin' }, { merge: true });
               setRole('admin');
             }
           } else {
@@ -63,17 +66,21 @@ export default function App() {
               email: firebaseUser.email,
               tipo: newTipo,
               criadoEm: new Date().toISOString(),
-              ativo: true
+              ativo: true,
+              lastLogin: new Date().toISOString()
             });
             setRole(newTipo);
           }
         } catch (error) {
-          console.error("Error fetching user role:", error);
+          console.error("Error in auth initialization:", error);
+          // Don't block app if just Firestore fails, but set defaults
           setRole('funcionario');
+          setBusinessId(firebaseUser.uid);
         }
       } else {
         setUser(null);
         setRole(null);
+        setBusinessId(null);
       }
       setLoading(false);
     });
