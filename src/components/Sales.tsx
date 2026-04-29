@@ -163,30 +163,30 @@ export default function Sales({ businessId }: { role?: string | null, businessId
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 h-[calc(100vh-180px)] font-sans">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 font-sans pb-20">
       
       {/* Product Selection - Premium UI */}
-      <section className="lg:col-span-8 flex flex-col h-full space-y-8">
+      <section className="lg:col-span-8 flex flex-col space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-           <div>
-              <h1 className="text-4xl font-black uppercase tracking-tighter text-white">
+           <div className="text-center md:text-left">
+              <h1 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter text-white">
                 VENDA <span className="text-brand-red">RÁPIDA</span>
               </h1>
-              <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.3em] mt-1">SISTEMA PDV DE ALTA PERFORMANCE</p>
+              <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em] mt-2">SISTEMA PDV DE ALTA PERFORMANCE</p>
            </div>
            <div className="relative w-full md:w-[350px] group">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600 w-5 h-5 group-focus-within:text-brand-red transition-colors" />
               <input 
                 type="text" 
                 placeholder="BUSCAR PRODUTO..." 
-                className="w-full bg-zinc-900 border-2 border-zinc-900 focus:border-brand-red/30 rounded-2xl py-5 pl-16 pr-6 text-white text-xs font-black tracking-widest uppercase focus:outline-none transition-all placeholder:text-zinc-700"
+                className="w-full bg-zinc-900 border-2 border-zinc-900 focus:border-brand-red/30 rounded-3xl py-6 pl-16 pr-6 text-white text-xs font-black tracking-widest uppercase focus:outline-none transition-all placeholder:text-zinc-800"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
            </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto pr-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10 scrollbar-hide">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
            {filteredProducts.map(product => (
              <motion.button
                 layout
@@ -194,7 +194,7 @@ export default function Sales({ businessId }: { role?: string | null, businessId
                 disabled={product.quantity <= 0}
                 onClick={() => addToCart(product)}
                 className={cn(
-                  "flex flex-col p-6 rounded-[2.5rem] border-2 transition-all text-left group relative overflow-hidden active:scale-95",
+                  "flex flex-col p-6 rounded-[2.5rem] border-2 transition-all text-left group relative overflow-hidden active:scale-95 min-h-[220px]",
                   product.quantity <= 0 
                     ? "bg-zinc-950 border-zinc-900 grayscale opacity-40 cursor-not-allowed" 
                     : "bg-zinc-900/50 border-zinc-900 hover:border-brand-red/40 hover:bg-zinc-900 shadow-xl"
@@ -202,33 +202,31 @@ export default function Sales({ businessId }: { role?: string | null, businessId
              >
                 <div className="mb-6 flex justify-between items-start">
                    <div className={cn(
-                     "w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110 shadow-lg",
+                     "w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110 shadow-lg",
                      product.quantity <= 0 ? "bg-zinc-900 text-zinc-700" : "bg-brand-red/10 text-brand-red group-hover:bg-brand-red group-hover:text-white"
                    )}>
-                      <Beer className="w-8 h-8" />
+                      <Beer className="w-7 h-7 md:w-8 md:h-8" />
                    </div>
                    {product.quantity > 0 && (
                      <div className="bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                        <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none">In Stock</span>
+                        <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">{product.quantity}</span>
                      </div>
                    )}
                 </div>
                 
-                <h3 className="font-black text-sm uppercase tracking-tight line-clamp-2 min-h-[2.5rem] text-zinc-200 group-hover:text-white transition-colors">{product.name}</h3>
+                <h3 className="font-black text-xs md:text-sm uppercase tracking-tight line-clamp-2 min-h-[2rem] text-zinc-200 group-hover:text-white transition-colors">{product.name}</h3>
                 
-                <div className="mt-8 pt-4 border-t border-zinc-800/50 flex flex-col items-start gap-1">
-                   <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Preço Unitário</span>
-                   <span className="text-2xl font-black text-white tabular-nums tracking-tighter drop-shadow-sm">{formatCurrency(product.salePrice)}</span>
+                <div className="mt-auto pt-4 flex flex-col items-start gap-1">
+                   <span className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.2em]">R$</span>
+                   <span className="text-xl md:text-2xl font-black text-white tabular-nums tracking-tighter drop-shadow-sm">{formatCurrency(product.salePrice)}</span>
                 </div>
-
-                <div className="absolute -right-2 -bottom-2 w-12 h-12 bg-white/5 rounded-full blur-2xl group-hover:bg-brand-red/20 transition-all" />
              </motion.button>
            ))}
         </div>
       </section>
 
       {/* Cart side panel - Premium Design */}
-      <section className="lg:col-span-4 bg-zinc-950 border-2 border-zinc-900 rounded-[4rem] flex flex-col overflow-hidden shadow-2xl relative border-brand-red/5">
+      <section className="lg:col-span-4 bg-zinc-950 border-2 border-zinc-900 rounded-[4rem] flex flex-col shadow-2xl relative border-brand-red/5 min-h-[600px] lg:min-h-0">
         <div className="p-8 border-b-2 border-zinc-900 flex items-center justify-between bg-black/40">
            <div className="flex items-center gap-4">
               <div className="bg-brand-red p-3 rounded-2xl shadow-xl shadow-red-600/30">
