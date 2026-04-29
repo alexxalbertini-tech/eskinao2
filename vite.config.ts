@@ -12,11 +12,11 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+        includeAssets: ['icon.svg', 'logo.svg'],
         manifest: {
           name: 'Eskinão Serve Fest 2',
           short_name: 'Eskinão',
-          description: 'Sistema profissional da adega Eskinão Serve Fest',
+          description: 'Sistema profissional da adega',
           theme_color: '#000000',
           background_color: '#000000',
           display: 'standalone',
@@ -25,13 +25,13 @@ export default defineConfig(({ mode }) => {
           scope: '/',
           icons: [
             {
-              src: 'icon.svg',
-              sizes: 'any',
+              src: '/icon.svg',
+              sizes: '192x192',
               type: 'image/svg+xml',
               purpose: 'any'
             },
             {
-              src: 'icon.svg',
+              src: '/icon.svg',
               sizes: '512x512',
               type: 'image/svg+xml',
               purpose: 'maskable'

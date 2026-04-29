@@ -71,20 +71,20 @@ export default function Reports({ businessId }: { role?: string | null, business
   const PREMIUM_COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ffffff', '#4b5563'];
 
   return (
-    <div className="space-y-12 max-w-7xl mx-auto px-4 pb-24 font-sans">
+    <div className="space-y-8 max-w-7xl mx-auto px-4 pb-24 font-sans">
       
-      {/* Header Premium Reports */}
-      <section className="flex flex-col gap-4">
-        <div className="text-center md:text-left">
-          <h1 className="text-5xl font-black uppercase tracking-tighter text-white leading-none">
+      {/* Header Optimized */}
+      <section className="flex flex-col gap-2">
+        <div className="text-left">
+          <h1 className="text-3xl font-black uppercase tracking-tighter text-white leading-none">
             ANÁLISE <span className="text-brand-red">ESTRATÉGICA</span>
           </h1>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.5em] mt-3">RELATÓRIOS E INTELIGÊNCIA DE NEGÓCIO</p>
+          <p className="text-zinc-500 text-[8px] font-black uppercase tracking-[0.4em] mt-1">RELATÓRIOS E INTELIGÊNCIA DE NEGÓCIO</p>
         </div>
       </section>
 
-      {/* Stats Overview Ultra Premium */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stats Overview Optimized */}
+      <section className="grid grid-cols-1 gap-3">
          <ReportStatCard 
             title="Volume de Vendas" 
             value={formatCurrency(totalSalesFromVendas)} 
@@ -92,46 +92,48 @@ export default function Reports({ businessId }: { role?: string | null, business
             color="brand-red" 
             sub="Faturamento Processado"
          />
-         <ReportStatCard 
-            title="Itens no Inventário" 
-            value={data.products.length} 
-            icon={Package} 
-            color="zinc-800" 
-            sub="SKUs Cadastrados"
-         />
-         <ReportStatCard 
-            title="Status de Ruptura" 
-            value={lowStockCount} 
-            icon={AlertCircle} 
-            color={lowStockCount > 0 ? "rose-500" : "emerald-500"} 
-            sub="Produtos com estoque baixo"
-         />
+         <div className="grid grid-cols-2 gap-3">
+            <ReportStatCard 
+               title="Inventário" 
+               value={data.products.length} 
+               icon={Package} 
+               color="zinc-900" 
+               sub="SKUs Cadastrados"
+            />
+            <ReportStatCard 
+               title="Ruptura" 
+               value={lowStockCount} 
+               icon={AlertCircle} 
+               color={lowStockCount > 0 ? "rose-500" : "emerald-500"} 
+               sub="Estoque baixo"
+            />
+         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-         {/* Pie Chart - Category Distribution */}
+      <div className="grid grid-cols-1 gap-6">
+         {/* Pie Chart - Category Distribution Optimized */}
          <motion.div 
-           initial={{ opacity: 0, x: -20 }}
-           animate={{ opacity: 1, x: 0 }}
-           className="bg-zinc-900/40 border border-zinc-900 p-10 rounded-[4rem] shadow-2xl relative overflow-hidden"
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           className="bg-[#121212] border border-zinc-900 p-6 rounded-2xl shadow-lg"
          >
-            <div className="flex items-center gap-4 mb-10">
-               <div className="bg-brand-red/10 p-3 rounded-2xl">
-                 <PieIcon className="w-6 h-6 text-brand-red" />
+            <div className="flex items-center gap-3 mb-6">
+               <div className="bg-brand-red/10 p-2 rounded-lg">
+                 <PieIcon className="w-4 h-4 text-brand-red" />
                </div>
-               <h3 className="text-xl font-black text-white uppercase tracking-tighter">MIX DE PRODUTOS</h3>
+               <h3 className="text-sm font-black text-white uppercase tracking-tighter">MIX DE PRODUTOS</h3>
             </div>
 
-            <div className="h-[400px] w-full">
+            <div className="h-[280px] w-full">
                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={salesByCategory}
                       cx="50%"
                       cy="50%"
-                      paddingAngle={8}
-                      innerRadius={80}
-                      outerRadius={130}
+                      paddingAngle={4}
+                      innerRadius={60}
+                      outerRadius={90}
                       dataKey="value"
                       stroke="none"
                     >
@@ -140,50 +142,50 @@ export default function Reports({ businessId }: { role?: string | null, business
                       ))}
                     </Pie>
                     <Tooltip 
-                       contentStyle={{ background: '#09090b', border: 'none', borderRadius: '1.5rem', fontSize: '10px', padding: '15px' }}
+                       contentStyle={{ background: '#09090b', border: 'none', borderRadius: '1rem', fontSize: '9px', padding: '10px' }}
                        itemStyle={{ fontWeight: '900', color: '#fff', textTransform: 'uppercase' }}
                     />
                     <Legend 
                       verticalAlign="bottom" 
                       height={36} 
-                      formatter={(value) => <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">{value}</span>}
+                      formatter={(value) => <span className="text-[8px] font-black uppercase text-zinc-600 tracking-widest">{value}</span>}
                     />
                   </PieChart>
                </ResponsiveContainer>
             </div>
          </motion.div>
 
-         {/* Bar Chart - Ranking Stocks */}
+         {/* Bar Chart - Ranking Stocks Optimized */}
          <motion.div 
-           initial={{ opacity: 0, x: 20 }}
-           animate={{ opacity: 1, x: 0 }}
-           className="bg-zinc-900/40 border border-zinc-900 p-10 rounded-[4rem] shadow-2xl"
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           className="bg-[#121212] border border-zinc-900 p-6 rounded-2xl shadow-lg"
          >
-            <div className="flex items-center gap-4 mb-10">
-               <div className="bg-brand-red/10 p-3 rounded-2xl">
-                 <BarChart3 className="w-6 h-6 text-brand-red" />
+            <div className="flex items-center gap-3 mb-6">
+               <div className="bg-brand-red/10 p-2 rounded-lg">
+                 <BarChart3 className="w-4 h-4 text-brand-red" />
                </div>
-               <h3 className="text-xl font-black text-white uppercase tracking-tighter">TOP 10 ESTOQUES</h3>
+               <h3 className="text-sm font-black text-white uppercase tracking-tighter">TOP 10 ESTOQUES</h3>
             </div>
 
-            <div className="h-[400px] w-full">
+            <div className="h-[280px] w-full">
                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.products.sort((a,b) => b.quantity - a.quantity).slice(0, 10)} margin={{bottom: 60}}>
+                  <BarChart data={data.products.sort((a,b) => b.quantity - a.quantity).slice(0, 10)} margin={{bottom: 40}}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#18181b" />
                     <XAxis 
                       dataKey="name" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{fill: '#3f3f46', fontSize: 10, fontWeight: 900}} 
+                      tick={{fill: '#3f3f46', fontSize: 8, fontWeight: 900}} 
                       angle={-45}
                       textAnchor="end"
                     />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#3f3f46', fontSize: 10}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#3f3f46', fontSize: 8}} />
                     <Tooltip 
                       cursor={{fill: '#18181b'}}
-                      contentStyle={{ background: '#09090b', border: 'none', borderRadius: '1.5rem', fontWeight: '900', color: '#fff' }}
+                      contentStyle={{ background: '#09090b', border: 'none', borderRadius: '1rem', fontWeight: '900', color: '#fff', fontSize: '9px' }}
                     />
-                    <Bar dataKey="quantity" fill="#ef4444" radius={[12, 12, 0, 0]}>
+                    <Bar dataKey="quantity" fill="#ef4444" radius={[6, 6, 0, 0]}>
                        {data.products.slice(0, 10).map((entry, index) => (
                          <Cell key={`cell-${index}`} fill={index === 0 ? '#ef4444' : '#27272a'} />
                        ))}
@@ -194,20 +196,20 @@ export default function Reports({ businessId }: { role?: string | null, business
          </motion.div>
       </div>
 
-      {/* Transaction Efficiency Section */}
-      <section className="bg-zinc-900/20 border-2 border-zinc-900 rounded-[4rem] p-12 flex flex-col md:flex-row items-center gap-10">
-         <div className="w-24 h-24 bg-brand-red rounded-[2.5rem] flex items-center justify-center flex-shrink-0 shadow-2xl shadow-red-600/30">
-            <TrendingUp className="w-10 h-10 text-white" />
+      {/* Transaction Efficiency Section Optimized */}
+      <section className="bg-zinc-900/10 border border-zinc-900 rounded-3xl p-6 flex flex-col items-center gap-6">
+         <div className="w-16 h-16 bg-brand-red rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl shadow-red-900/20">
+            <TrendingUp className="w-7 h-7 text-white" />
          </div>
-         <div className="space-y-2 text-center md:text-left flex-1">
-            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Insights de Lucratividade</h3>
-            <p className="text-zinc-600 text-sm font-medium uppercase tracking-widest max-w-xl italic">
-               Sua média de vendas diária cresceu 15% nos últimos 7 dias. Foque em repor os itens de <span className="text-brand-red">Cervejas</span> para o final de semana.
+         <div className="space-y-1.5 text-center">
+            <h3 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Insights de Lucratividade</h3>
+            <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest leading-relaxed">
+               Sua média de vendas diária cresceu 15% nos últimos 7 dias. Foque em repor <span className="text-brand-red">Cervejas</span> para o fim de semana.
             </p>
          </div>
-         <div className="bg-black/60 p-8 rounded-[2.5rem] border border-zinc-800 text-center min-w-[200px]">
-            <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-2">Checkout Médio</span>
-            <span className="text-3xl font-black text-white tracking-tighter">{formatCurrency(totalSalesFromVendas / (data.transactions.length || 1))}</span>
+         <div className="w-full bg-black/40 p-4 rounded-xl border border-zinc-900/50 text-center">
+            <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-1">Checkout Médio</span>
+            <span className="text-2xl font-black text-white tracking-tighter">{formatCurrency(totalSalesFromVendas / (data.transactions.length || 1))}</span>
          </div>
       </section>
     </div>
@@ -217,28 +219,28 @@ export default function Reports({ businessId }: { role?: string | null, business
 function ReportStatCard({ title, value, icon: Icon, color, sub }: any) {
   return (
     <div className={cn(
-      "p-10 rounded-[3rem] border-2 shadow-2xl flex flex-col gap-6 relative overflow-hidden transition-all hover:-translate-y-2",
-      color === 'brand-red' ? "bg-brand-red border-brand-red text-white" : "bg-zinc-900/50 border-zinc-900 text-white"
+      "p-5 rounded-2xl border transition-all flex flex-col gap-4 relative overflow-hidden",
+      color === 'brand-red' ? "bg-brand-red border-brand-red text-white" : "bg-[#121212] border-zinc-900 text-white"
     )}>
        <div className={cn(
-         "p-4 rounded-2xl w-fit shadow-xl",
-         color === 'brand-red' ? "bg-white/20" : "bg-zinc-800 text-brand-red"
+         "p-2.5 rounded-lg w-fit shadow-sm",
+         color === 'brand-red' ? "bg-white/20" : "bg-zinc-950 text-brand-red border border-zinc-900"
        )}>
-          <Icon className="w-7 h-7" />
+          <Icon className="w-5 h-5" />
        </div>
        <div>
-          <span className={cn("text-[11px] font-black uppercase tracking-[0.3em] block mb-2", color === 'brand-red' ? "text-white/60" : "text-zinc-600")}>
+          <span className={cn("text-[8px] font-black uppercase tracking-widest block mb-1", color === 'brand-red' ? "text-white/60" : "text-zinc-600")}>
             {title}
           </span>
-          <p className="text-4xl font-black uppercase tracking-tighter leading-none">{value}</p>
-          <p className={cn("text-[10px] font-bold uppercase tracking-widest mt-2", color === 'brand-red' ? "text-white/40" : "text-zinc-700")}>
+          <p className="text-xl font-black uppercase tracking-tighter leading-none">{value}</p>
+          <p className={cn("text-[7px] font-bold uppercase tracking-widest mt-1", color === 'brand-red' ? "text-white/40" : "text-zinc-700")}>
             {sub}
           </p>
        </div>
        
        {color === 'brand-red' && (
-         <div className="absolute top-0 right-0 p-8 text-white/5 opacity-20 -rotate-12 translate-x-1/2 -translate-y-1/2">
-            <Icon className="w-56 h-56" />
+         <div className="absolute top-0 right-0 p-4 text-white/5 opacity-10 -rotate-12 translate-x-1/3 -translate-y-1/3">
+            <Icon className="w-32 h-32" />
          </div>
        )}
     </div>

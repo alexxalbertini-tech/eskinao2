@@ -153,58 +153,58 @@ export default function Quotes({ role, businessId }: { role?: string | null, bus
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="space-y-6 pb-20">
-      <section className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-           <h1 className="text-3xl font-black uppercase tracking-tighter">Orçamentos</h1>
-           <p className="text-zinc-500 text-sm font-medium uppercase tracking-widest">GERADOR DE PDF E WHATSAPP</p>
+    <div className="space-y-6 max-w-6xl mx-auto px-4 pb-24 font-sans">
+      <section className="flex flex-col gap-4">
+        <div className="text-left">
+           <h1 className="text-2xl font-black uppercase tracking-tighter text-white">ORÇAMENTOS</h1>
+           <p className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.3em]">Gerador de PDF e WhatsApp</p>
         </div>
         <button 
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 bg-brand-red text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-xl shadow-red-600/20"
+          className="w-full flex items-center justify-center gap-3 bg-brand-red text-white p-4 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-xl active:scale-95 border-t border-white/10"
         >
-          <Plus className="w-5 h-5" />
-          Novo Orçamento
+          <Plus className="w-4 h-4" />
+          NOVO ORÇAMENTO
         </button>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Cart Side */}
-        <section className="bg-zinc-950 border border-zinc-900 rounded-[2.5rem] p-8 shadow-2xl flex flex-col min-h-[500px]">
-           <div className="flex items-center gap-4 mb-8">
-               <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center">
-                  <ShoppingCart className="text-brand-gold w-6 h-6" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Cart Side - Optimized */}
+        <section className="bg-[#121212] border border-zinc-900 rounded-2xl p-5 shadow-lg flex flex-col min-h-[400px]">
+           <div className="flex items-center gap-3 mb-6">
+               <div className="w-10 h-10 bg-zinc-950 border border-zinc-900 rounded-lg flex items-center justify-center">
+                  <ShoppingCart className="text-brand-red w-5 h-5" />
                </div>
-               <h2 className="text-xl font-black uppercase tracking-tighter">Itens do Orçamento</h2>
+               <h2 className="text-sm font-black uppercase tracking-tighter">Itens no Orçamento</h2>
            </div>
 
-           <div className="space-y-4 flex-1">
+           <div className="space-y-3 flex-1">
               <AnimatePresence>
                 {cart.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-zinc-700">
-                     <Package className="w-16 h-16 mb-4 opacity-10" />
-                     <p className="text-xs font-black uppercase tracking-widest">Carrinho Vazio</p>
+                  <div className="flex flex-col items-center justify-center py-12 text-zinc-800">
+                     <Package className="w-12 h-12 mb-3 opacity-10" />
+                     <p className="text-[9px] font-black uppercase tracking-widest leading-none">Carrinho Vazio</p>
                   </div>
                 ) : (
                   cart.map(item => (
                     <motion.div 
                       key={item.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="bg-zinc-900/50 border border-zinc-900 p-4 rounded-2xl flex items-center justify-between group"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      className="bg-black/20 border border-zinc-900/50 p-3 rounded-xl flex items-center justify-between group"
                     >
-                       <div>
-                          <h4 className="font-bold text-sm text-white uppercase tracking-tight">{item.name}</h4>
-                          <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{formatCurrency(item.salePrice)} uni</p>
+                       <div className="max-w-[120px]">
+                          <h4 className="font-black text-xs text-white uppercase tracking-tight truncate leading-none mb-1">{item.name}</h4>
+                          <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">{formatCurrency(item.salePrice)}</p>
                        </div>
-                       <div className="flex items-center gap-4">
-                          <div className="flex items-center bg-black rounded-xl border border-zinc-800 p-1">
-                             <button onClick={() => updateQuantity(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white">-</button>
-                             <span className="w-8 text-center font-black text-sm">{item.quantity}</span>
-                             <button onClick={() => updateQuantity(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white">+</button>
+                       <div className="flex items-center gap-3">
+                          <div className="flex items-center bg-black/40 rounded-lg border border-zinc-900 p-0.5">
+                             <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-white">-</button>
+                             <span className="w-6 text-center font-black text-xs text-brand-red">{item.quantity}</span>
+                             <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-white">+</button>
                           </div>
-                          <button onClick={() => removeFromCart(item.id)} className="p-2 text-zinc-700 hover:text-brand-red transition-colors">
+                          <button onClick={() => removeFromCart(item.id)} className="p-1.5 text-zinc-800 hover:text-brand-red transition-colors">
                              <Trash2 className="w-4 h-4" />
                           </button>
                        </div>
@@ -214,85 +214,87 @@ export default function Quotes({ role, businessId }: { role?: string | null, bus
               </AnimatePresence>
            </div>
 
-           <div className="mt-8 pt-8 border-t border-zinc-900 space-y-6">
-              <div className="space-y-4">
-                 <div className="flex items-center gap-3">
-                    <User className="w-4 h-4 text-zinc-500" />
+           <div className="mt-6 pt-6 border-t border-zinc-900 space-y-5">
+              <div className="grid grid-cols-1 gap-3">
+                 <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-700" />
                     <input 
                       type="text" placeholder="NOME DO CLIENTE" 
-                      className="flex-1 bg-transparent border-b border-zinc-900 p-2 text-sm font-bold uppercase outline-none focus:border-brand-red transition-all"
+                      className="w-full bg-black/20 border border-zinc-900 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black uppercase outline-none focus:border-brand-red/30 transition-all"
                       value={clientInfo.name} onChange={e => setClientInfo({...clientInfo, name: e.target.value.toUpperCase()})}
                     />
                  </div>
-                 <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-zinc-500" />
+                 <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-700" />
                     <input 
-                      type="tel" placeholder="TELEFONE (WHATSAPP)" 
-                      className="flex-1 bg-transparent border-b border-zinc-900 p-2 text-sm font-bold outline-none focus:border-brand-red transition-all"
+                      type="tel" placeholder="WHATSAPP (21999...)" 
+                      className="w-full bg-black/20 border border-zinc-900 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black outline-none focus:border-brand-red/30 transition-all mb-2"
                       value={clientInfo.phone} onChange={e => setClientInfo({...clientInfo, phone: e.target.value})}
                     />
                  </div>
               </div>
 
-              <div className="flex items-center justify-between py-4">
-                 <span className="font-black uppercase tracking-tighter text-zinc-500">Total Previsto</span>
-                 <span className="text-3xl font-black text-white">{formatCurrency(total)}</span>
+              <div className="flex items-center justify-between py-2">
+                 <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Total Previsto</span>
+                 <span className="text-2xl font-black text-white tracking-tighter tabular-nums">{formatCurrency(total)}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                  <button 
                   disabled={cart.length === 0}
                   onClick={generatePDF}
-                  className="flex items-center justify-center gap-2 bg-zinc-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-800 disabled:opacity-50 transition-all border border-zinc-800"
+                  className="flex items-center justify-center gap-2 bg-zinc-950 border border-zinc-900 text-zinc-400 py-3 rounded-xl font-black uppercase text-[8px] tracking-widest hover:text-white disabled:opacity-30 transition-all active:scale-95"
                  >
-                    <Download className="w-4 h-4" />
-                    Exportar PDF
+                    <Download className="w-3.5 h-3.5" />
+                    PDF
                  </button>
                  <button 
                   disabled={cart.length === 0}
                   onClick={sendWhatsApp}
-                  className="flex items-center justify-center gap-2 bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 disabled:opacity-50 transition-all"
+                  className="flex items-center justify-center gap-2 bg-emerald-600 text-white py-3 rounded-xl font-black uppercase text-[8px] tracking-widest shadow-lg shadow-emerald-900/20 disabled:opacity-30 transition-all active:scale-95"
                  >
-                    <MessageCircle className="w-4 h-4" />
-                    WhatsApp
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    WHATSAPP
                  </button>
               </div>
            </div>
         </section>
 
-        {/* Product List Side */}
-        <section className="space-y-6">
+        {/* Product List Side - Optimized */}
+        <section className="space-y-4">
            <div className="relative">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600 w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 w-4 h-4" />
               <input 
                 type="text" 
-                placeholder="PROCURAR PRODUTO..."
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 pl-16 text-sm font-bold uppercase outline-none focus:border-brand-red/50 transition-all"
+                placeholder="PESQUISAR PRODUTO..."
+                className="w-full bg-[#121212] border border-zinc-900 rounded-xl py-4 pl-11 pr-4 text-[10px] font-black uppercase outline-none focus:border-brand-red/30 transition-all shadow-sm"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredProducts.map(product => (
+           <div className="grid grid-cols-2 gap-3">
+              {filteredProducts.slice(0, 20).map(product => (
                 <button
                   key={product.id}
                   onClick={() => addToCart(product)}
-                  className="bg-zinc-950 border border-zinc-900 p-4 rounded-[2rem] text-left hover:border-brand-gold/30 transition-all group relative overflow-hidden"
+                  className="bg-[#121212] border border-zinc-900 p-3 rounded-xl text-left hover:border-brand-red/30 transition-all active:scale-[0.98] relative overflow-hidden flex flex-col justify-between min-h-[90px]"
                 >
                    <div className="flex justify-between items-start mb-2">
                       <span className={cn(
-                        "text-[8px] font-black uppercase px-2 py-1 rounded-full",
-                        product.quantity > 10 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+                        "text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full border",
+                        product.quantity > 10 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
                       )}>
-                        Stock: {product.quantity}
+                        {product.quantity} UN
                       </span>
-                      <Plus className="w-4 h-4 text-zinc-900 group-hover:text-brand-gold transition-colors" />
+                      <Plus className="w-3 h-3 text-zinc-800" />
                    </div>
-                   <h3 className="font-black text-sm uppercase leading-tight mb-2 truncate">{product.name}</h3>
-                   <p className="text-lg font-black text-brand-gold">{formatCurrency(product.salePrice)}</p>
+                   <div>
+                      <h3 className="font-black text-[11px] uppercase leading-tight mb-1 truncate text-zinc-100">{product.name}</h3>
+                      <p className="text-sm font-black text-brand-red tracking-tighter">{formatCurrency(product.salePrice)}</p>
+                   </div>
                    
-                   <div className="absolute inset-0 bg-brand-gold/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                   <div className="absolute inset-0 bg-brand-red/5 opacity-0 active:opacity-100 transition-opacity" />
                 </button>
               ))}
            </div>

@@ -40,7 +40,7 @@
   body, #root {
     min-height: 100%;
     min-height: -webkit-fill-available;
-    background-color: black;
+    background-color: #0f0f0f;
   }
 
   html, body {
@@ -48,10 +48,11 @@
     overflow-y: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
   }
 
   body {
-    @apply bg-black text-white antialiased;
+    @apply bg-[#0f0f0f] text-[#eaeaea] antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }

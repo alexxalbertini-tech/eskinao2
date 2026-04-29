@@ -160,40 +160,37 @@ export default function Deliveries({ businessId }: { role?: string | null, busin
     );
   }
 
-  return (
-    <div className="space-y-8 max-w-6xl mx-auto px-4 pb-24 font-sans">
+  return (    <div className="space-y-6 max-w-6xl mx-auto px-4 pb-24 font-sans">
       
-      {/* Header Premium */}
-      <section className="flex flex-col gap-6">
-        <div className="text-center md:text-left">
-          <h1 className="text-4xl font-black uppercase tracking-tighter text-white">
+      {/* Header Optimized */}
+      <section className="flex flex-col gap-4">
+        <div className="text-left">
+          <h1 className="text-3xl font-black uppercase tracking-tighter text-white leading-none">
             GESTÃO DE <span className="text-brand-red">ENTREGAS</span>
           </h1>
-          <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.3em] mt-1">Logística Veloz e Inteligente</p>
+          <p className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.3em] mt-1">Logística Veloz e Inteligente</p>
         </div>
         
         <button 
           onClick={() => setModalOpen(true)}
-          className="w-full bg-brand-red hover:bg-red-600 text-white p-8 rounded-[2.5rem] font-black uppercase tracking-widest text-xl transition-all shadow-2xl shadow-red-600/20 active:scale-[0.98] flex items-center justify-center gap-4"
+          className="w-full bg-brand-red hover:bg-red-600 text-white p-5 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-4 border-t border-white/10"
         >
-          <div className="bg-white/20 p-2 rounded-full">
-            <Truck className="w-8 h-8" />
-          </div>
+          <Truck className="w-5 h-5" />
           NOVA ENTREGA
         </button>
       </section>
 
       {/* Status Filter Pills */}
-      <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide py-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
          {['all', 'pending', 'preparing', 'shipped', 'delivered', 'cancelled'].map(s => (
            <button
              key={s}
              onClick={() => setFilter(s as any)}
              className={cn(
-               "px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-2 transition-all",
+               "px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest whitespace-nowrap border transition-all active:scale-95",
                filter === s 
-                 ? "bg-brand-red border-brand-red text-white shadow-lg shadow-red-600/20" 
-                 : "bg-zinc-900/50 border-zinc-900 text-zinc-500 hover:border-zinc-800"
+                 ? "bg-brand-red/10 border-brand-red text-brand-red" 
+                 : "bg-[#121212] border-zinc-900 text-zinc-600 hover:border-zinc-800"
              )}
            >
              {s === 'all' ? 'Tudo' : STATUS_CONFIG[s as DeliveryStatus]?.label.toUpperCase()}
@@ -201,100 +198,100 @@ export default function Deliveries({ businessId }: { role?: string | null, busin
          ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AnimatePresence mode="popLayout">
           {filteredDeliveries.map(delivery => {
             const StatusIcon = STATUS_CONFIG[delivery.status as DeliveryStatus]?.icon || Truck;
             return (
               <motion.div 
                 layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
                 key={delivery.id}
-                className="bg-zinc-900/40 border border-zinc-800/50 rounded-[3.5rem] overflow-hidden hover:border-zinc-700 transition-all shadow-2xl group relative"
+                className="bg-[#121212] border border-zinc-900 rounded-2xl overflow-hidden hover:border-zinc-700 transition-all shadow-xl group relative"
               >
-                 <div className={cn("h-3 w-full", STATUS_CONFIG[delivery.status as DeliveryStatus]?.color)} />
+                 <div className={cn("h-1.5 w-full", STATUS_CONFIG[delivery.status as DeliveryStatus]?.color)} />
                  
-                 <div className="p-10 space-y-8">
+                 <div className="p-5 space-y-5">
                     <div className="flex items-start justify-between">
-                       <div className="flex items-center gap-5">
-                          <div className={cn("p-5 rounded-[1.5rem] text-white shadow-lg transition-transform group-hover:scale-110", STATUS_CONFIG[delivery.status as DeliveryStatus]?.color)}>
-                             <StatusIcon className={cn("w-7 h-7", delivery.status === 'preparing' && "animate-spin")} />
+                       <div className="flex items-center gap-4">
+                          <div className={cn("p-3 rounded-lg text-white shadow-md transition-transform group-hover:scale-110", STATUS_CONFIG[delivery.status as DeliveryStatus]?.color)}>
+                             <StatusIcon className={cn("w-5 h-5", delivery.status === 'preparing' && "animate-spin")} />
                           </div>
-                          <div className="truncate max-w-[200px]">
-                             <h3 className="font-black text-2xl uppercase tracking-tighter text-white leading-none mb-1 truncate">{delivery.clientName}</h3>
-                             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                               {STATUS_CONFIG[delivery.status as DeliveryStatus]?.label}
+                          <div className="truncate max-w-[180px]">
+                             <h3 className="font-black text-lg uppercase tracking-tight text-white leading-none mb-0.5 truncate">{delivery.clientName}</h3>
+                             <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">
+                                {STATUS_CONFIG[delivery.status as DeliveryStatus]?.label}
                              </p>
                           </div>
                        </div>
-                       <button className="p-4 bg-zinc-800/50 rounded-2xl text-zinc-700 transition-all">
-                         <MoreVertical className="w-6 h-6" />
+                       <button className="p-2 bg-zinc-900 rounded-lg text-zinc-700">
+                         <MoreVertical className="w-5 h-5" />
                        </button>
                     </div>
 
-                    <div className="bg-black/60 rounded-[2.5rem] p-8 space-y-6 border border-zinc-800/50 shadow-inner">
-                       <div className="flex items-start gap-5">
-                          <div className="p-3 bg-brand-red/10 rounded-xl">
-                            <MapPin className="w-6 h-6 text-brand-red" />
+                    <div className="bg-[#0c0c0c] rounded-xl p-4 space-y-4 border border-zinc-900 shadow-inner">
+                       <div className="flex items-start gap-4">
+                          <div className="p-2 bg-brand-red/10 rounded-lg">
+                            <MapPin className="w-5 h-5 text-brand-red" />
                           </div>
-                          <div className="space-y-1">
-                             <p className="text-lg font-black text-white uppercase leading-tight italic">
+                          <div className="truncate">
+                             <p className="text-sm font-black text-white uppercase leading-tight italic">
                                 {delivery.address}, {delivery.number}
                              </p>
-                             <p className="text-xs font-black text-zinc-500 uppercase tracking-widest">
+                             <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
                                 {delivery.district}
                              </p>
                           </div>
                        </div>
-                       <div className="flex items-center gap-5">
-                          <div className="p-3 bg-brand-red/10 rounded-xl">
-                            <Phone className="w-6 h-6 text-brand-red" />
+                       <div className="flex items-center gap-4">
+                          <div className="p-2 bg-brand-red/10 rounded-lg">
+                            <Phone className="w-5 h-5 text-brand-red" />
                           </div>
-                          <p className="text-xl font-black text-white tracking-[0.1em]">{delivery.clientPhone}</p>
+                          <p className="text-lg font-black text-white tracking-[0.05em]">{delivery.clientPhone}</p>
                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8 bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem]">
+                    <div className="grid grid-cols-2 gap-4 bg-black/20 p-4 rounded-xl border border-zinc-900/50">
                        <div>
-                          <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-1">Total Geral</span>
-                          <p className="text-3xl font-black text-white tabular-nums tracking-tighter">
+                          <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-0.5">Total Geral</span>
+                          <p className="text-xl font-black text-white tabular-nums tracking-tighter">
                             {formatCurrency(delivery.total + (delivery.deliveryFee || 0))}
                           </p>
                        </div>
                        <div className="text-right">
-                          <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-2">Pagamento</span>
-                          <span className="inline-block px-5 py-2 bg-brand-red text-white rounded-full text-[12px] font-black uppercase tracking-widest shadow-lg shadow-red-600/20">
+                          <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-1">Pagamento</span>
+                          <span className="inline-block px-3 py-1 bg-brand-red/10 border border-brand-red/20 text-brand-red rounded-full text-[9px] font-black uppercase tracking-widest">
                              {delivery.paymentMethod}
                           </span>
                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-5 pt-2">
+                    <div className="grid grid-cols-2 gap-3 pt-1">
                        <button 
                          onClick={() => openInMaps(delivery.address, delivery.number, delivery.district)}
-                         className="flex items-center justify-center gap-4 bg-zinc-800 hover:bg-white hover:text-black py-6 rounded-[2rem] transition-all font-black text-xs uppercase tracking-[0.2em] border border-zinc-700 shadow-xl active:scale-95"
+                         className="flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 py-3 rounded-lg transition-all font-black text-[9px] uppercase tracking-widest border border-zinc-800 shadow-md active:scale-95"
                        >
-                          <Navigation className="w-6 h-6" />
+                          <Navigation className="w-4 h-4" />
                           MAPAS
                        </button>
                        <button 
                          onClick={() => { window.open(`https://wa.me/55${delivery.clientPhone.replace(/\D/g,'')}`, '_blank') }}
-                         className="flex items-center justify-center gap-4 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white py-6 rounded-[2rem] transition-all font-black text-xs uppercase tracking-[0.2em] border border-emerald-500/20 shadow-xl active:scale-95"
+                         className="flex items-center justify-center gap-2 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 py-3 rounded-lg transition-all font-black text-[9px] uppercase tracking-widest border border-emerald-500/20 shadow-md active:scale-95"
                        >
-                          <Phone className="w-6 h-6" />
-                          WHATSAPP
+                          <Phone className="w-4 h-4" />
+                          ZAP
                        </button>
                     </div>
 
-                    <div className="pt-4">
+                    <div className="pt-2">
                        {delivery.status !== 'delivered' && delivery.status !== 'cancelled' && (
-                         <div className="grid grid-cols-1 gap-5">
+                         <div className="grid grid-cols-1 gap-3">
                             {delivery.status === 'pending' && (
                               <button 
                                 onClick={() => updateStatus(delivery.id, 'preparing')} 
-                                className="w-full bg-amber-500 hover:bg-amber-400 text-black py-8 rounded-[2.5rem] font-black uppercase tracking-widest text-xl shadow-2xl shadow-amber-500/20 active:scale-95 transition-all"
+                                className="w-full bg-amber-500 hover:bg-amber-400 text-black py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all"
                               >
                                 INICIAR PREPARO
                               </button>
@@ -302,27 +299,27 @@ export default function Deliveries({ businessId }: { role?: string | null, busin
                             {delivery.status === 'preparing' && (
                               <button 
                                 onClick={() => updateStatus(delivery.id, 'shipped')} 
-                                className="w-full bg-blue-600 hover:bg-blue-500 text-white py-8 rounded-[2.5rem] font-black uppercase tracking-widest text-xl shadow-2xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-4"
+                                className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3"
                               >
-                                <Truck className="w-8 h-8" />
+                                <Truck className="w-5 h-5" />
                                 DESPACHAR PEDIDO
                               </button>
                             )}
                             {delivery.status === 'shipped' && (
                               <button 
                                 onClick={() => updateStatus(delivery.id, 'delivered')} 
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-8 rounded-[2.5rem] font-black uppercase tracking-widest text-xl shadow-2xl shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-4"
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3"
                               >
-                                <CheckCircle2 className="w-8 h-8" />
+                                <CheckCircle2 className="w-5 h-5" />
                                 CONFIRMAR ENTREGA
                               </button>
                             )}
                          </div>
                        )}
                        {delivery.status === 'delivered' && (
-                         <div className="bg-emerald-500/10 border-2 border-emerald-500/20 py-6 rounded-[2.5rem] flex items-center justify-center gap-4 shadow-inner">
-                            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                            <span className="text-sm font-black text-emerald-500 uppercase tracking-[0.3em]">ENTREGA FINALIZADA</span>
+                         <div className="bg-emerald-500/10 border border-emerald-500/20 py-3 rounded-xl flex items-center justify-center gap-3 shadow-inner">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">FINALIZADA</span>
                          </div>
                        )}
                     </div>
@@ -333,90 +330,89 @@ export default function Deliveries({ businessId }: { role?: string | null, busin
         </AnimatePresence>
       </div>
 
-      {/* Modal - Simplificado Premium */}
+      {/* Modal - Optimized */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
-             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setModalOpen(false)} className="absolute inset-0 bg-black/98 backdrop-blur-2xl" />
+          <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 overflow-hidden">
+             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setModalOpen(false)} className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
              <motion.div 
                initial={{y:"100%"}} animate={{y:0}} exit={{y:"100%"}} 
-               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-               className="relative w-full max-w-xl bg-zinc-950 border-t md:border border-zinc-800 rounded-t-[4rem] md:rounded-[4rem] p-10 pb-16 overflow-y-auto max-h-[96vh] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] scrollbar-hide"
+               className="relative w-full max-w-lg bg-[#0f0f0f] border-t md:border border-zinc-900 rounded-t-3xl md:rounded-3xl p-6 pb-12 overflow-y-auto max-h-[92vh] shadow-2xl"
              >
-                <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center justify-between mb-8">
                    <div className="flex flex-col">
-                     <h2 className="text-4xl font-black uppercase tracking-tighter text-white leading-none">NOVA <span className="text-brand-red">ENTREGA</span></h2>
-                     <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-2">Logística Eskinão 2</span>
+                     <h2 className="text-xl font-black uppercase tracking-tighter text-white leading-none">NOVA <span className="text-brand-red">ENTREGA</span></h2>
+                     <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mt-1">Logística Eskinão 2</span>
                    </div>
-                   <button onClick={()=>setModalOpen(false)} className="p-5 bg-zinc-900 rounded-3xl text-zinc-500 hover:text-white transition-all active:scale-90 border border-zinc-800"><XCircle className="w-8 h-8" /></button>
+                   <button onClick={()=>setModalOpen(false)} className="p-2 bg-zinc-900 rounded-lg text-zinc-500 border border-zinc-800"><XCircle className="w-5 h-5" /></button>
                 </div>
 
-                <form onSubmit={handleCreateDelivery} className="space-y-8">
-                   <div className="space-y-6">
-                      <div className="space-y-2 px-4">
-                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em]">Nome do Cliente</span>
-                         <input required type="text" className="w-full bg-zinc-900/50 border-2 border-zinc-900 focus:border-brand-red/30 rounded-3xl p-6 text-white font-black uppercase text-xl focus:outline-none transition-all placeholder:text-zinc-800" placeholder="EX: MARCOS REIS" value={formData.clientName} onChange={e=>setFormData({...formData, clientName: e.target.value.toUpperCase()})} />
+                <form onSubmit={handleCreateDelivery} className="space-y-6">
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                         <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-2">Cliente</span>
+                         <input required type="text" className="w-full bg-[#121212] border border-zinc-800 focus:border-brand-red/30 rounded-xl p-4 text-white font-black uppercase text-xs focus:outline-none transition-all placeholder:text-zinc-800" placeholder="NOME" value={formData.clientName} onChange={e=>setFormData({...formData, clientName: e.target.value.toUpperCase()})} />
                       </div>
-                      <div className="space-y-2 px-4">
-                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em]">Telefone</span>
-                         <input required type="tel" placeholder="21999999999" className="w-full bg-zinc-900/50 border-2 border-zinc-900 focus:border-brand-red/30 rounded-3xl p-6 text-white font-black uppercase text-xl focus:outline-none transition-all" value={formData.clientPhone} onChange={e=>setFormData({...formData, clientPhone: e.target.value})} />
+                      <div className="space-y-2">
+                         <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-2">Telefone</span>
+                         <input required type="tel" placeholder="21999999999" className="w-full bg-[#121212] border border-zinc-800 focus:border-brand-red/30 rounded-xl p-4 text-white font-black uppercase text-xs focus:outline-none transition-all" value={formData.clientPhone} onChange={e=>setFormData({...formData, clientPhone: e.target.value})} />
                       </div>
                    </div>
 
-                   <div className="bg-zinc-900/40 p-8 rounded-[3rem] border border-zinc-900/50 space-y-6 shadow-inner">
+                   <div className="bg-[#121212] p-4 rounded-2xl border border-zinc-900 space-y-4 shadow-inner">
                       <div className="space-y-2">
-                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] ml-2">Endereço Completo</span>
-                         <input required type="text" className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-5 text-white font-bold uppercase focus:border-brand-red/50 outline-none transition-all" placeholder="RUA / AVENIDA" value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value.toUpperCase()})} />
+                         <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-2">Rua / Av</span>
+                         <input required type="text" className="w-full bg-black/20 border border-zinc-800 rounded-lg p-3 text-[11px] text-white font-bold uppercase focus:border-brand-red/50 outline-none" placeholder="LOGRADOURO" value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value.toUpperCase()})} />
                       </div>
-                      <div className="grid grid-cols-2 gap-5">
+                      <div className="grid grid-cols-2 gap-4">
                          <div className="space-y-2">
-                            <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] ml-2">Nº</span>
-                            <input required type="text" className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-5 text-white font-bold uppercase focus:border-brand-red/50 outline-none" placeholder="123" value={formData.number} onChange={e=>setFormData({...formData, number: e.target.value})} />
+                            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-2">Nº</span>
+                            <input required type="text" className="w-full bg-black/20 border border-zinc-800 rounded-lg p-3 text-[11px] text-white font-bold uppercase focus:border-brand-red/50 outline-none" placeholder="123" value={formData.number} onChange={e=>setFormData({...formData, number: e.target.value})} />
                          </div>
                          <div className="space-y-2">
-                            <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] ml-2">Bairro</span>
-                            <input required type="text" className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-5 text-white font-bold uppercase focus:border-brand-red/50 outline-none" placeholder="BAIRRO" value={formData.district} onChange={e=>setFormData({...formData, district: e.target.value.toUpperCase()})} />
+                            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-2">Bairro</span>
+                            <input required type="text" className="w-full bg-black/20 border border-zinc-800 rounded-lg p-3 text-[11px] text-white font-bold uppercase focus:border-brand-red/50 outline-none" placeholder="BAIRRO" value={formData.district} onChange={e=>setFormData({...formData, district: e.target.value.toUpperCase()})} />
                          </div>
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-2 gap-6 px-4">
+                   <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em]">Valor Pedido</span>
-                         <input required type="number" step="0.01" className="w-full bg-zinc-900 border-2 border-zinc-900 rounded-3xl p-6 text-white font-black text-2xl focus:border-white/20 outline-none transition-all" value={formData.total} onChange={e=>setFormData({...formData, total: Number(e.target.value)})} />
+                         <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest ml-2">Valor Pedido</span>
+                         <input required type="number" step="0.01" className="w-full bg-[#121212] border border-zinc-800 rounded-xl p-4 text-white font-black text-sm focus:border-white/20 outline-none" value={formData.total} onChange={e=>setFormData({...formData, total: Number(e.target.value)})} />
                       </div>
                       <div className="space-y-2">
-                         <span className="text-[11px] font-black text-brand-red uppercase tracking-[0.2em]">Taxa Entrega</span>
-                         <input required type="number" step="0.01" className="w-full bg-zinc-900 border-2 border-brand-red/20 rounded-3xl p-6 text-brand-red font-black text-2xl focus:border-brand-red outline-none transition-all" value={formData.deliveryFee} onChange={e=>setFormData({...formData, deliveryFee: Number(e.target.value)})} />
+                         <span className="text-[9px] font-black text-brand-red uppercase tracking-widest ml-2">Taxa Entrega</span>
+                         <input required type="number" step="0.01" className="w-full bg-brand-red/5 border border-brand-red/20 rounded-xl p-4 text-brand-red font-black text-sm focus:border-brand-red outline-none" value={formData.deliveryFee} onChange={e=>setFormData({...formData, deliveryFee: Number(e.target.value)})} />
                       </div>
                    </div>
 
-                   <div className="space-y-5">
-                      <span className="text-[11px] font-black uppercase text-zinc-600 tracking-[0.4em] block text-center">FORMA DE PAGAMENTO</span>
-                      <div className="grid grid-cols-3 gap-4">
+                   <div className="space-y-4">
+                      <span className="text-[9px] font-black uppercase text-zinc-600 tracking-widest block text-center">FORMA DE PAGAMENTO</span>
+                      <div className="grid grid-cols-3 gap-3">
                          {[
                            { id: 'pix', icon: QrCode, label: 'PIX' },
                            { id: 'cash', icon: Banknote, label: 'DN' },
-                           { id: 'card', icon: CreditCard, label: 'CARTÃO' }
+                           { id: 'card', icon: CreditCard, label: 'PED' }
                          ].map(method => (
                            <button
                              key={method.id} type="button"
                              onClick={() => setFormData({...formData, paymentMethod: method.id})}
                              className={cn(
-                               "flex flex-col items-center gap-4 p-6 rounded-[2.5rem] border-2 transition-all active:scale-95",
+                               "flex flex-col items-center gap-2 p-4 rounded-xl border transition-all active:scale-95",
                                formData.paymentMethod === method.id 
-                                 ? "bg-brand-red border-brand-red text-white shadow-2xl shadow-red-600/40 translate-y-[-4px]" 
-                                 : "bg-black border-zinc-900 text-zinc-600"
+                                 ? "bg-brand-red/10 border-brand-red text-brand-red" 
+                                 : "bg-black/20 border-zinc-900 text-zinc-600"
                              )}
                            >
-                             <method.icon className="w-8 h-8" />
-                             <span className="text-[10px] font-black tracking-widest">{method.label}</span>
+                             <method.icon className="w-5 h-5" />
+                             <span className="text-[8px] font-black tracking-widest">{method.label}</span>
                            </button>
                          ))}
                       </div>
                    </div>
 
-                   <button type="submit" className="w-full bg-brand-red text-white py-10 rounded-[3rem] font-black uppercase tracking-[0.3em] text-2xl shadow-[0_20px_50px_rgba(220,38,38,0.3)] active:scale-95 transition-all mt-8 border-t border-white/20">
+                   <button type="submit" className="w-full bg-brand-red text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all mt-4 border-t border-white/10">
                       CADASTRAR ENTREGA
                    </button>
                 </form>
