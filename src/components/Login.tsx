@@ -69,9 +69,11 @@ export default function Login() {
         }
       }
     } catch (err: any) {
-      console.error("Login catch final:", err);
+      console.error("Firebase Auth Exception:", err);
       const code = err.code || err.message || 'unknown';
-      setError(translateError(code));
+      const translated = translateError(code);
+      // Show both the message and the code for total transparency as requested
+      setError(`${translated} (${code})`);
     } finally {
       setLoading(false);
     }
@@ -92,8 +94,9 @@ export default function Login() {
       }
       setSuccess('Conta criada com sucesso! Bem-vindo.');
     } catch (err: any) {
-      console.error("Registration error:", err);
-      setError(translateError(err.code || err.message));
+      console.error("Registration Error Detail:", err);
+      const code = err.code || err.message || 'unknown';
+      setError(`${translateError(code)} (${code})`);
     } finally {
       setLoading(false);
     }
@@ -108,7 +111,9 @@ export default function Login() {
       setSuccess('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
       setTimeout(() => setIsForgotPassword(false), 3000);
     } catch (err: any) {
-      setError(translateError(err.code));
+      console.error("Password Reset Error:", err);
+      const code = err.code || err.message || 'unknown';
+      setError(`${translateError(code)} (${code})`);
     } finally {
       setLoading(false);
     }
@@ -116,40 +121,35 @@ export default function Login() {
 
   const translateError = (code: string) => {
     const errorStr = String(code).toLowerCase();
-    console.warn("Auth Error Logic:", errorStr);
-
-    if (errorStr.includes('invalid-credential') || errorStr.includes('wrong-password') || errorStr.includes('user-not-found')) {
+    
+    if (errorStr.includes('user-not-found') || errorStr.includes('wrong-password') || errorStr.includes('invalid-credential')) {
       return 'E-mail ou senha incorretos.';
     }
     if (errorStr.includes('email-already-in-use')) {
-      return 'Este e-mail já está em uso.';
-    }
-    if (errorStr.includes('unauthorized-domain')) {
-      return 'Domínio não autorizado no Firebase.';
-    }
-    if (errorStr.includes('weak-password')) {
-      return 'A senha deve ter 6+ caracteres.';
+      return 'Este e-mail já está cadastrado.';
     }
     if (errorStr.includes('invalid-email')) {
-      return 'Formato de e-mail inválido.';
+      return 'O formato do e-mail é inválido.';
     }
     if (errorStr.includes('network-request-failed')) {
-      return 'Sem conexão ou erro de rede.';
+      return 'Falha de conexão com a internet.';
     }
     if (errorStr.includes('too-many-requests')) {
-      return 'Muitas tentativas. Bloqueado temporariamente.';
+      return 'Muitas tentativas. Tente mais tarde.';
     }
     if (errorStr.includes('operation-not-allowed')) {
-      return 'Login com senha não ativado no Console.';
+      return 'Login por senha desativado no Firebase.';
     }
     if (errorStr.includes('user-disabled')) {
-      return 'Usuário desativado pelo administrador.';
+      return 'Esta conta foi desativada.';
+    }
+    if (errorStr.includes('weak-password')) {
+      return 'A senha deve ter pelo menos 6 caracteres.';
     }
 
-    // Friendly messages for common plain errors
-    if (errorStr === 'preencha todos os campos.') return errorStr;
+    if (errorStr === 'preencha todos os campos.') return 'Preencha todos os campos.';
     
-    return 'Ocorreu um erro. Verifique seus dados.';
+    return 'Erro na autenticação.';
   };
 
   return (
