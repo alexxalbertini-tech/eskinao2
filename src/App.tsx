@@ -13,6 +13,7 @@ import Reports from './components/Reports';
 import Deliveries from './components/Deliveries';
 import Quotes from './components/Quotes';
 import Layout from './components/Layout';
+import PWAUpdater from './components/PWAUpdater';
 import { AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -83,6 +84,7 @@ export default function App() {
 
   return (
     <Router>
+      <PWAUpdater />
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />

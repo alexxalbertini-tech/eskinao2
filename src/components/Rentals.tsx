@@ -102,164 +102,203 @@ export default function Rentals({ role, businessId }: { role?: string | null, bu
   };
 
   const items = [
-    'Mesas', 'Cadeiras', 'Cooler', 'Caixa Térmica', 'Tendas', 'Caixa de Som', 'Outros'
+    'Mesa (Jogo)', 'Cadeira (Unid)', 'Cooler Profissional', 'Caixa Térmica G', 'Tamubor / Tina', 'Chopeira', 'Tenda 3x3', 'Outros'
   ];
+
+  const getStatusColor = (rental: any) => {
+    if (rental.status === 'returned') return 'emerald';
+    const isLate = new Date(rental.returnDate) < new Date() && rental.status === 'pending';
+    if (isLate) return 'rose';
+    return 'amber';
+  };
 
   const filteredRentals = rentals.filter(r => {
     const matchesSearch = r.clientName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || r.status === filterStatus;
     return matchesSearch && matchesStatus;
-  });
+  }).sort((a, b) => new Date(a.returnDate).getTime() - new Date(b.returnDate).getTime());
 
   return (
-    <div className="space-y-6">
-      <section className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-10 max-w-7xl mx-auto px-4 pb-24 font-sans">
+      <section className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black uppercase tracking-tighter">Eventos / Aluguéis</h1>
-          <p className="text-zinc-500 text-sm font-medium uppercase tracking-widest">Controle de Locação</p>
+          <h1 className="text-5xl font-black uppercase tracking-tighter text-white leading-none">
+            CONTROLE DE <span className="text-brand-red">LOCAÇÃO</span>
+          </h1>
+          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.5em] mt-3">GESTÃO DE ATIVOS E EVENTOS</p>
         </div>
         <button 
           onClick={() => { resetForm(); setModalOpen(true); }}
-          className="flex items-center gap-2 bg-amber-500 text-black px-6 py-3 rounded-2xl font-bold uppercase tracking-widest hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
+          className="bg-brand-red hover:bg-red-600 text-white px-10 py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-red-600/20 active:scale-95 flex items-center gap-4"
         >
-          <Plus className="w-5 h-5" />
-          Novo Aluguel
+          <Plus className="w-6 h-6" />
+          NOVO ALUGUEL
         </button>
       </section>
 
-      {/* Stats Summary */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2rem]">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Total Ativos</span>
-            <p className="text-2xl font-black text-white">{rentals.filter(r => r.status === 'pending').length}</p>
+      {/* Stats Summary Premium */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+         <div className="bg-zinc-900 border-2 border-zinc-900 p-8 rounded-[2.5rem] shadow-xl">
+            <span className="text-[10px] text-zinc-600 font-black uppercase tracking-widest block mb-2">ALUGUÉIS ATIVOS</span>
+            <p className="text-4xl font-black text-white tracking-tighter">{rentals.filter(r => r.status === 'pending').length}</p>
          </div>
-         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2rem]">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Retornos Hoje</span>
-            <p className="text-2xl font-black text-amber-500">
+         <div className="bg-zinc-900 border-2 border-zinc-900 p-8 rounded-[2.5rem] shadow-xl">
+            <span className="text-[10px] text-zinc-600 font-black uppercase tracking-widest block mb-2">RETORNOS HOJE</span>
+            <p className="text-4xl font-black text-brand-red tracking-tighter">
                {rentals.filter(r => r.status === 'pending' && r.returnDate === new Date().toISOString().split('T')[0]).length}
+            </p>
+         </div>
+         <div className="bg-zinc-900 border-2 border-zinc-900 p-8 rounded-[2.5rem] shadow-xl">
+            <span className="text-[10px] text-zinc-600 font-black uppercase tracking-widest block mb-2">EM ATRASO</span>
+            <p className="text-4xl font-black text-rose-500 tracking-tighter">
+               {rentals.filter(r => r.status === 'pending' && new Date(r.returnDate) < new Date()).length}
             </p>
          </div>
       </section>
 
-      {/* Filters */}
-      <section className="flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
+      {/* Filters Premium */}
+      <section className="flex flex-col md:flex-row gap-6 items-center">
+        <div className="relative flex-1 w-full group">
+           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600 w-6 h-6 group-focus-within:text-brand-red transition-colors" />
            <input 
             type="text" 
-            placeholder="NOME DO CLIENTE..."
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 uppercase text-xs font-bold tracking-widest placeholder:text-zinc-700"
+            placeholder="PESQUISAR CLIENTE OU ITEM..."
+            className="w-full bg-zinc-900 border-2 border-zinc-900 rounded-[2rem] py-6 pl-16 pr-6 text-white focus:outline-none focus:border-brand-red/30 uppercase text-xs font-black tracking-widest placeholder:text-zinc-800 transition-all shadow-xl"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
            />
         </div>
-        <div className="flex bg-zinc-900 p-1.5 rounded-2xl border border-zinc-800 w-full md:w-auto">
+        <div className="flex bg-zinc-900/50 p-2 rounded-[2rem] border-2 border-zinc-900 w-full md:w-auto shadow-xl">
            {['all', 'pending', 'returned'].map(status => (
              <button
                key={status}
                onClick={() => setFilterStatus(status)}
                className={cn(
-                 "flex-1 md:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 "flex-1 md:flex-none px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
                  filterStatus === status 
-                   ? "bg-zinc-800 text-amber-500 shadow-xl" 
-                   : "text-zinc-500 hover:text-white"
+                   ? "bg-brand-red text-white shadow-lg" 
+                   : "text-zinc-600 hover:text-white"
                )}
              >
-               {status === 'all' ? 'Tudo' : status === 'pending' ? 'Pendentes' : 'Devolvidos'}
+               {status === 'all' ? 'TUDO' : status === 'pending' ? 'PENDENTES' : 'DEVOLVIDOS'}
              </button>
            ))}
         </div>
       </section>
 
-      {/* Rentals List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredRentals.map(rental => (
-          <motion.div 
-            layout
-            key={rental.id}
-            className={cn(
-              "p-6 rounded-[2.5rem] border transition-all group overflow-hidden",
-              rental.status === 'returned' 
-                ? "bg-zinc-950/50 border-zinc-900 opacity-60" 
-                : "bg-zinc-900 border-zinc-800 hover:border-amber-500/50"
-            )}
-          >
-             <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                   <div className={cn(
-                     "w-12 h-12 rounded-2xl flex items-center justify-center",
-                     rental.status === 'returned' ? "bg-zinc-800 text-zinc-600" : "bg-amber-500/10 text-amber-500"
-                   )}>
-                      <Calendar className="w-6 h-6" />
+      {/* Rentals Grid Premium */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <AnimatePresence mode="popLayout">
+          {filteredRentals.map(rental => {
+            const statusColor = getStatusColor(rental);
+            const isLate = new Date(rental.returnDate) < new Date() && rental.status === 'pending';
+            
+            return (
+              <motion.div 
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                key={rental.id}
+                className={cn(
+                  "p-8 rounded-[3.5rem] border-2 transition-all group overflow-hidden relative shadow-2xl",
+                  rental.status === 'returned' 
+                    ? "bg-zinc-950/50 border-zinc-900 opacity-60" 
+                    : isLate 
+                      ? "bg-zinc-900 border-rose-500/30" 
+                      : "bg-zinc-900 border-zinc-900 hover:border-brand-red/30"
+                )}
+              >
+                 {isLate && (
+                   <div className="absolute top-0 left-0 w-full bg-rose-600 py-2 text-center">
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white">DEVOLUÇÃO EM ATRASO</span>
                    </div>
-                   <div>
-                      <h3 className="font-black text-lg uppercase tracking-tighter truncate max-w-[200px]">{rental.clientName}</h3>
-                      <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase">
-                         <Phone className="w-3 h-3" /> {rental.clientPhone}
-                      </div>
-                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                   <span className={cn(
-                     "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em]",
-                     rental.status === 'returned' ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
-                   )}>
-                     {rental.status === 'returned' ? 'Devolvido' : 'Pendente'}
-                   </span>
-                   <span className="text-xl font-black text-white">{formatCurrency(rental.total)}</span>
-                </div>
-             </div>
+                 )}
 
-             <div className="grid grid-cols-2 gap-4 p-4 bg-black/40 rounded-2xl border border-zinc-800/50 mb-6">
-                <div>
-                   <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">Item Alugado</span>
-                   <p className="text-xs font-bold text-zinc-200 uppercase">{rental.quantity}x {rental.item}</p>
-                </div>
-                <div className="text-right">
-                   <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">Retorno</span>
-                   <p className="text-xs font-bold text-amber-500 uppercase">{new Date(rental.returnDate).toLocaleDateString()}</p>
-                </div>
-             </div>
+                 <div className="flex items-start justify-between mb-8">
+                    <div className="flex items-center gap-6">
+                       <div className={cn(
+                         "w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-2xl",
+                         rental.status === 'returned' ? "bg-zinc-800 text-zinc-600" : "bg-brand-red/10 text-brand-red"
+                       )}>
+                          <Calendar className="w-8 h-8" />
+                       </div>
+                       <div>
+                          <h3 className="font-black text-2xl uppercase tracking-tighter text-white truncate max-w-[200px] leading-none mb-2">{rental.clientName}</h3>
+                          <div className="flex items-center gap-3">
+                             <div className="flex items-center gap-2 text-zinc-600 text-[10px] font-black uppercase tracking-widest bg-black/40 px-3 py-1 rounded-full">
+                               <Phone className="w-3 h-3" /> {rental.clientPhone}
+                             </div>
+                             {rental.deposit > 0 && (
+                               <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">CAUÇÃO PAGO</span>
+                             )}
+                          </div>
+                       </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-3">
+                       <span className={cn(
+                         "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg",
+                         rental.status === 'returned' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-brand-red/10 text-brand-red border border-brand-red/20"
+                       )}>
+                         {rental.status === 'returned' ? 'DEVOLVIDO' : isLate ? 'ATRASADO' : 'ALUGADO'}
+                       </span>
+                       <span className="text-3xl font-black text-white tabular-nums tracking-tighter">{formatCurrency(rental.total)}</span>
+                    </div>
+                 </div>
 
-             <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                   <button 
-                    onClick={() => { window.open(`https://wa.me/55${rental.clientPhone.replace(/\D/g,'')}`, '_blank') }}
-                    className="p-3 bg-zinc-800 hover:bg-emerald-500/20 text-zinc-400 hover:text-emerald-500 rounded-2xl transition-all"
-                   >
-                      <MessageCircle className="w-5 h-5" />
-                   </button>
-                   <button 
-                    onClick={() => generateQuotePDF({
-                      clientName: rental.clientName,
-                      items: [{ name: rental.item, quantity: rental.quantity, price: rental.total / rental.quantity }],
-                      total: rental.total,
-                      type: 'rental',
-                      date: rental.deliveryDate
-                    })}
-                    className="p-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-2xl transition-all"
-                   >
-                      <FileText className="w-5 h-5" />
-                   </button>
-                </div>
+                 <div className="grid grid-cols-2 gap-4 p-6 bg-black/60 rounded-[2rem] border border-zinc-800 shadow-inner mb-8">
+                    <div className="space-y-1">
+                       <span className="text-[9px] text-zinc-600 font-black uppercase tracking-widest block">ITENS</span>
+                       <p className="text-sm font-black text-zinc-200 uppercase tracking-tight">{rental.quantity}x {rental.item}</p>
+                    </div>
+                    <div className="text-right space-y-1">
+                       <span className="text-[9px] text-zinc-600 font-black uppercase tracking-widest block">PREVISÃO RETORNO</span>
+                       <p className={cn(
+                         "text-sm font-black uppercase tracking-tight",
+                         isLate ? "text-rose-500" : "text-brand-red"
+                       )}>{new Date(rental.returnDate).toLocaleDateString()}</p>
+                    </div>
+                 </div>
 
-                <div className="flex gap-2">
-                   <button 
-                    onClick={() => toggleStatus(rental)}
-                    className={cn(
-                      "flex items-center gap-2 px-6 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all",
-                      rental.status === 'returned' 
-                        ? "bg-zinc-800 text-zinc-400 hover:text-rose-500" 
-                        : "bg-emerald-500 text-black hover:bg-emerald-400"
-                    )}
-                   >
-                      {rental.status === 'returned' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                      {rental.status === 'returned' ? 'Reabrir' : 'Baixa / Devolução'}
-                   </button>
-                </div>
-             </div>
-          </motion.div>
-        ))}
+                 <div className="flex items-center justify-between">
+                    <div className="flex gap-3">
+                       <button 
+                        onClick={() => { window.open(`https://wa.me/55${rental.clientPhone.replace(/\D/g,'')}`, '_blank') }}
+                        className="p-5 bg-zinc-900 border border-zinc-800 hover:border-emerald-500/30 text-zinc-500 hover:text-emerald-500 rounded-[1.5rem] transition-all shadow-xl active:scale-90"
+                       >
+                          <MessageCircle className="w-6 h-6" />
+                       </button>
+                       <button 
+                        onClick={() => generateQuotePDF({
+                          clientName: rental.clientName,
+                          items: [{ name: rental.item, quantity: rental.quantity, price: rental.total / rental.quantity }],
+                          total: rental.total,
+                          type: 'rental',
+                          date: rental.deliveryDate
+                        })}
+                        className="p-5 bg-zinc-900 border border-zinc-800 hover:border-white/30 text-zinc-500 hover:text-white rounded-[1.5rem] transition-all shadow-xl active:scale-90"
+                       >
+                          <FileText className="w-6 h-6" />
+                       </button>
+                    </div>
+
+                    <button 
+                      onClick={() => toggleStatus(rental)}
+                      className={cn(
+                        "flex items-center gap-4 px-8 py-4 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl border-t border-white/10",
+                        rental.status === 'returned' 
+                          ? "bg-zinc-800 text-zinc-400 hover:text-rose-500 border-zinc-700" 
+                          : "bg-emerald-600 text-white hover:bg-emerald-500"
+                      )}
+                    >
+                       {rental.status === 'returned' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                       {rental.status === 'returned' ? 'REABRIR' : 'MARCAR COMO DEVOLVIDO'}
+                    </button>
+                 </div>
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
       </div>
 
       {/* Modal */}

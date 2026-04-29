@@ -127,24 +127,23 @@ export default function Sales({ businessId }: { role?: string | null, businessId
         }
       }
 
-      // 2. Inventory Deduction (Only for direct sales, delivery deducts on delivery usually)
-      if (paymentMethod !== 'delivery') {
-        for (const item of cart) {
-          await updateDoc(doc(db, 'produtos', item.id), {
-            quantity: increment(-item.quantity)
-          });
+      // 2. Inventory Deduction
+      // Deduct immediately for all direct sales and counter deliveries
+      for (const item of cart) {
+        await updateDoc(doc(db, 'produtos', item.id), {
+          quantity: increment(-item.quantity)
+        });
 
-          await addDoc(collection(db, 'estoque'), {
-            userId: businessId,
-            productId: item.id,
-            productName: item.name,
-            quantity: item.quantity,
-            type: 'out',
-            totalSale: item.salePrice * item.quantity,
-            createdBy: auth.currentUser?.uid,
-            date: new Date().toISOString()
-          });
-        }
+        await addDoc(collection(db, 'estoque'), {
+          userId: businessId,
+          productId: item.id,
+          productName: item.name,
+          quantity: item.quantity,
+          type: 'out',
+          totalSale: item.salePrice * item.quantity,
+          createdBy: auth.currentUser?.uid,
+          date: new Date().toISOString()
+        });
       }
 
       setCart([]);
