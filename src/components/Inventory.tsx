@@ -13,6 +13,7 @@ import {
 } from '../lib/firebase';
 import { 
   Plus, 
+  Minus,
   Search, 
   Edit3, 
   Trash2, 

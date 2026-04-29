@@ -118,10 +118,14 @@ export default function Layout({ user, role }: { user: User, role?: string | nul
                     : "text-zinc-500 border-transparent hover:text-white hover:bg-zinc-900/50 hover:border-zinc-800"
                 )}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-                {isActive && (
-                  <motion.div layoutId="activeNavIndicator" className="absolute left-0 w-1 h-5 bg-white rounded-full ml-1.5" />
+                {({ isActive }) => (
+                  <>
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                    {isActive && (
+                      <motion.div layoutId="activeNavIndicator" className="absolute left-0 w-1 h-5 bg-white rounded-full ml-1.5" />
+                    )}
+                  </>
                 )}
               </NavLink>
             ))}
