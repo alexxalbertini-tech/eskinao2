@@ -22,54 +22,56 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+    
     setLoading(true);
     setError(null);
     setSuccess(null);
+    
+    const adminEmail = 'eskinaoservefest@gmail.com';
+    const adminPass = 'Eskinao@2026';
+
     try {
+      if (!email || !password) {
+        throw new Error('Preencha todos os campos.');
+      }
+
       if (!email.includes('@')) {
         throw { code: 'auth/invalid-email' };
       }
 
-      const adminEmail = 'eskinaoservefest@gmail.com';
-      const adminPass = 'Eskinao@2026';
+      console.log("Attempting login for:", email);
 
       try {
         await signInWithEmailAndPassword(auth, email, password);
-        setSuccess('Acesso concedido! Redirecionando...');
+        setSuccess('Acesso concedido! Entrando...');
+        // The App component will detect auth change and redirect
       } catch (logErr: any) {
         const errorStr = String(logErr.code || logErr.message).toLowerCase();
-        console.error("Login attempt technical error:", logErr);
+        console.error("Firebase Login Error Detail:", logErr);
 
-        // Special case: If it's the requested admin and it doesn't exist
-        if (email.toLowerCase() === adminEmail && (errorStr.includes('user-not-found') || errorStr.includes('invalid-credential') || errorStr.includes('invalid-employee-record'))) {
-          try {
-            if (password === adminPass) {
-              const userCred = await createUserWithEmailAndPassword(auth, email, password);
-              await updateProfile(userCred.user, { displayName: 'ADMINISTRADOR' });
-              setSuccess('Administrador padrão configurado e logado!');
-            } else {
-              // It was likely just a wrong password for an existing admin, 
-              // but we try to create it anyway to be sure. 
-              // If it fails with email-already-in-use, then it's definitely a wrong password.
-              try {
-                await createUserWithEmailAndPassword(auth, email, password);
-              } catch (regErr: any) {
-                if (String(regErr.code).includes('email-already-in-use')) {
-                  throw logErr; // Throw original login error (likely wrong password)
-                }
-                throw regErr;
-              }
-            }
-          } catch (regErr: any) {
-             throw regErr;
+        // Special case: If it's the requested admin and it doesn't exist yet
+        if (email.toLowerCase() === adminEmail && 
+           (errorStr.includes('user-not-found') || errorStr.includes('invalid-credential'))) {
+          
+          if (password === adminPass) {
+            console.log("Creating default administrator account...");
+            const userCred = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(userCred.user, { displayName: 'ADMINISTRADOR' });
+            setSuccess('Admin configurado com sucesso!');
+          } else {
+            // Wrong password for the specific admin email
+            throw { code: 'auth/wrong-password' };
           }
         } else {
+          // Normal user login failure
           throw logErr;
         }
       }
     } catch (err: any) {
-      console.error("Login final error:", err);
-      setError(translateError(err.code || err.message));
+      console.error("Login catch final:", err);
+      const code = err.code || err.message || 'unknown';
+      setError(translateError(code));
     } finally {
       setLoading(false);
     }
@@ -114,37 +116,40 @@ export default function Login() {
 
   const translateError = (code: string) => {
     const errorStr = String(code).toLowerCase();
-    console.warn("Auth Error Captured:", errorStr);
+    console.warn("Auth Error Logic:", errorStr);
 
     if (errorStr.includes('invalid-credential') || errorStr.includes('wrong-password') || errorStr.includes('user-not-found')) {
-      return 'E-mail ou senha incorretos. Verifique seus dados.';
+      return 'E-mail ou senha incorretos.';
     }
     if (errorStr.includes('email-already-in-use')) {
-      return 'Este e-mail já está sendo usado em outra conta.';
+      return 'Este e-mail já está em uso.';
     }
     if (errorStr.includes('unauthorized-domain')) {
-      return 'Domínio não autorizado: Este link não é permitido para login. Configure no Firebase.';
+      return 'Domínio não autorizado no Firebase.';
     }
     if (errorStr.includes('weak-password')) {
-      return 'Segurança baixa: a senha deve ter no mínimo 6 caracteres.';
+      return 'A senha deve ter 6+ caracteres.';
     }
     if (errorStr.includes('invalid-email')) {
-      return 'O formato do e-mail digitado não é válido.';
+      return 'Formato de e-mail inválido.';
     }
     if (errorStr.includes('network-request-failed')) {
-      return 'Erro de conexão: Não conseguimos alcançar o servidor. Verifique sua internet.';
+      return 'Sem conexão ou erro de rede.';
     }
     if (errorStr.includes('too-many-requests')) {
-      return 'Muitas tentativas malsucedidas. Tente novamente em alguns minutos.';
+      return 'Muitas tentativas. Bloqueado temporariamente.';
     }
     if (errorStr.includes('operation-not-allowed')) {
-      return 'O login por e-mail/senha não está habilitado no Firebase.';
+      return 'Login com senha não ativado no Console.';
     }
     if (errorStr.includes('user-disabled')) {
-      return 'Esta conta foi desativada pelo administrador.';
+      return 'Usuário desativado pelo administrador.';
     }
+
+    // Friendly messages for common plain errors
+    if (errorStr === 'preencha todos os campos.') return errorStr;
     
-    return 'Erro ao acessar o sistema. Verifique os dados ou contate o suporte.';
+    return 'Ocorreu um erro. Verifique seus dados.';
   };
 
   return (

@@ -31,49 +31,55 @@ export default function App() {
           const adminEmail = 'eskinaoservefest@gmail.com';
           const isMainAdmin = firebaseUser.email?.toLowerCase() === adminEmail;
 
-          // Find business master ID (admin's UID)
+          // Define businessId first
           let currentBusinessId = firebaseUser.uid;
           
           if (isMainAdmin) {
-            currentBusinessId = firebaseUser.uid;
             setBusinessId(firebaseUser.uid);
           } else {
+            console.log("Fetching business master record...");
             const adminQuery = query(collection(db, 'usuarios'), where('email', '==', adminEmail), limit(1));
             const adminSnap = await getDocs(adminQuery);
             if (!adminSnap.empty) {
               currentBusinessId = adminSnap.docs[0].id;
               setBusinessId(currentBusinessId);
             } else {
-              // Admin not found in DB yet, use own UID as temporary businessId
               setBusinessId(firebaseUser.uid);
             }
           }
-          
+
+          // Fetch/Create user document
+          console.log("Verifying user profile in Firestore...");
           const userRef = doc(db, 'usuarios', firebaseUser.uid);
           const userSnap = await getDoc(userRef);
           
           if (userSnap.exists()) {
-            setRole(userSnap.data().tipo);
-            // Ensure admin stays admin
-            if (isMainAdmin && userSnap.data().tipo !== 'admin') {
+            const userData = userSnap.data();
+            setRole(userData.tipo);
+            
+            // Sync admin role if necessary
+            if (isMainAdmin && userData.tipo !== 'admin') {
+              console.log("Updating admin role sync...");
               await setDoc(userRef, { tipo: 'admin' }, { merge: true });
               setRole('admin');
             }
           } else {
+            console.log("Creating new user profile record...");
             const newTipo = isMainAdmin ? 'admin' : 'funcionario';
-            await setDoc(userRef, {
+            const profileData = {
               nome: firebaseUser.displayName || (isMainAdmin ? 'ADMINISTRADOR' : 'FUNCIONÁRIO'),
               email: firebaseUser.email,
               tipo: newTipo,
               criadoEm: new Date().toISOString(),
               ativo: true,
               lastLogin: new Date().toISOString()
-            });
+            };
+            await setDoc(userRef, profileData);
             setRole(newTipo);
           }
         } catch (error) {
-          console.error("Error in auth initialization:", error);
-          // Don't block app if just Firestore fails, but set defaults
+          console.error("Critical error in user initialization:", error);
+          // Safety defaults to prevent blank screens
           setRole('funcionario');
           setBusinessId(firebaseUser.uid);
         }
