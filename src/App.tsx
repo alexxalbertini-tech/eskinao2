@@ -28,57 +28,36 @@ export default function App() {
         setUser(firebaseUser);
         
         try {
-          const adminEmail = 'eskinaoservefest@gmail.com';
-          const isMainAdmin = firebaseUser.email?.toLowerCase() === adminEmail;
+          // MODO TESTE TOTAL: QUALQUER USUÁRIO É ADMIN
+          const currentBusinessId = firebaseUser.uid;
+          setBusinessId(currentBusinessId);
 
-          // Define businessId first (Legacy support or single business mode)
-          let currentBusinessId = firebaseUser.uid;
-          
-          if (isMainAdmin) {
-            setBusinessId(firebaseUser.uid);
-          } else {
-            // Non-admins look for the main admin's UID as businessId
-            try {
-              const adminQuery = query(collection(db, 'usuarios'), where('email', '==', adminEmail), limit(1));
-              const adminSnap = await getDocs(adminQuery);
-              if (!adminSnap.empty) {
-                currentBusinessId = adminSnap.docs[0].id;
-              }
-            } catch (err) {
-              console.warn("Could not fetch admin record for businessId, using own UID fallback:", err);
-            }
-            setBusinessId(currentBusinessId);
-          }
-
-          // Fetch or Create user profile
           const userRef = doc(db, 'usuarios', firebaseUser.uid);
           const userSnap = await getDoc(userRef);
           
           if (userSnap.exists()) {
             const userData = userSnap.data();
-            setRole(userData.tipo);
-            
-            // Sync admin role if restricted email logs in
-            if (isMainAdmin && userData.tipo !== 'admin') {
+            // Atualizar tipo para admin automaticamente se não for
+            if (userData.tipo !== 'admin') {
               await setDoc(userRef, { tipo: 'admin' }, { merge: true });
-              setRole('admin');
             }
+            setRole('admin');
           } else {
-            const newRole = isMainAdmin ? 'admin' : 'funcionario';
+            // Novo usuário sempre admin
             const profileData = {
-              nome: firebaseUser.displayName || (isMainAdmin ? 'ADMINISTRADOR' : 'FUNCIONÁRIO'),
+              nome: firebaseUser.displayName || 'ADMINISTRADOR TESTE',
               email: firebaseUser.email,
-              tipo: newRole,
+              tipo: 'admin',
               ativo: true,
               criadoEm: serverTimestamp(),
               lastLogin: serverTimestamp()
             };
             await setDoc(userRef, profileData);
-            setRole(newRole);
+            setRole('admin');
           }
         } catch (error) {
-          console.error("Profile initialization error:", error);
-          setRole('funcionario');
+          console.error("Erro crítico no perfil (Teste Mode):", error);
+          setRole('admin'); // Segurança de fallback para teste
           setBusinessId(firebaseUser.uid);
         }
       } else {
@@ -109,20 +88,16 @@ export default function App() {
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
           
           <Route element={user ? <Layout user={user} role={role} /> : <Navigate to="/login" />}>
-            <Route path="/" element={<Dashboard role={role} businessId={businessId} />} />
+            <Route path="/" element={<Cashier role={role} businessId={businessId} />} />
+            <Route path="/dashboard" element={<Dashboard role={role} businessId={businessId} />} />
             <Route path="/entregas" element={<Deliveries role={role} businessId={businessId} />} />
             <Route path="/vendas" element={<Sales role={role} businessId={businessId} />} />
             <Route path="/clientes" element={<Clients role={role} businessId={businessId} />} />
             <Route path="/estoque" element={<Inventory role={role} businessId={businessId} />} />
-            
-            {role === 'admin' && (
-              <>
-                <Route path="/caixa" element={<Cashier role={role} businessId={businessId} />} />
-                <Route path="/alugueis" element={<Rentals role={role} businessId={businessId} />} />
-                <Route path="/orcamentos" element={<Quotes role={role} businessId={businessId} />} />
-                <Route path="/relatorios" element={<Reports role={role} businessId={businessId} />} />
-              </>
-            )}
+            <Route path="/caixa" element={<Cashier role={role} businessId={businessId} />} />
+            <Route path="/alugueis" element={<Rentals role={role} businessId={businessId} />} />
+            <Route path="/orcamentos" element={<Quotes role={role} businessId={businessId} />} />
+            <Route path="/relatorios" element={<Reports role={role} businessId={businessId} />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

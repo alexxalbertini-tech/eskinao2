@@ -28,43 +28,19 @@ export default function Login() {
     setError(null);
     setSuccess(null);
     
-    const adminEmail = 'eskinaoservefest@gmail.com';
-    const adminPass = 'Eskinao@2026';
-
     try {
       if (!email || !password) {
-        throw new Error('Preencha todos os campos.');
+        throw new Error('Preencha os campos de acesso.');
       }
 
-      if (!email.includes('@')) {
-        throw { code: 'auth/invalid-email' };
-      }
-
-      console.log("Iniciando login no Firebase Auth para:", email);
+      console.log("Tentativa de Login (Monitoramento):", email);
 
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        console.log("Login realizado com sucesso! UID:", userCredential.user.uid);
-        setSuccess('Acesso concedido! Entrando...');
+        setSuccess('Acesso Liberado! Modo Teste Ativo.');
       } catch (logErr: any) {
-        console.error("Erro técnico no login Firebase:", logErr);
-        const errorStr = String(logErr.code || logErr.message).toLowerCase();
-
-        // Special case: If it's the requested admin and it doesn't exist yet
-        if (email.toLowerCase() === adminEmail && 
-           (errorStr.includes('user-not-found') || errorStr.includes('invalid-credential'))) {
-          
-          if (password === adminPass) {
-            console.log("Criando conta de administrador padrão...");
-            const userCred = await createUserWithEmailAndPassword(auth, email, password);
-            await updateProfile(userCred.user, { displayName: 'ADMINISTRADOR' });
-            setSuccess('Admin configurado com sucesso!');
-          } else {
-            throw { code: 'auth/wrong-password' };
-          }
-        } else {
-          throw logErr;
-        }
+        console.error("Erro Firebase no Login:", logErr);
+        throw logErr;
       }
     } catch (err: any) {
       console.error("Falha Crítica na Autenticação:", err);

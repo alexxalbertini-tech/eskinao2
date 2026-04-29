@@ -22,15 +22,11 @@ import {
   Navigation,
   Plus,
   Loader2,
-  Package,
-  ChevronRight,
   MoreVertical,
   Banknote,
   QrCode,
   CreditCard,
-  User,
-  Search,
-  Filter
+  Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatCurrency, cn } from '../lib/utils';
@@ -40,21 +36,17 @@ type DeliveryStatus = 'pending' | 'preparing' | 'shipped' | 'delivered' | 'cance
 const STATUS_CONFIG: Record<DeliveryStatus, { label: string, color: string, icon: any }> = {
   pending: { label: 'Pendente', color: 'bg-zinc-500', icon: Clock },
   preparing: { label: 'Preparo', color: 'bg-amber-500', icon: Loader2 },
-  shipped: { label: 'Em Rota', color: 'bg-blue-500', icon: Truck },
-  delivered: { label: 'Entregue', color: 'bg-emerald-500', icon: CheckCircle2 },
-  cancelled: { label: 'Cancelado', color: 'bg-rose-500', icon: XCircle }
+  shipped: { label: 'Em Rota', color: 'bg-blue-600', icon: Truck },
+  delivered: { label: 'Entregue', color: 'bg-emerald-600', icon: CheckCircle2 },
+  cancelled: { label: 'Cancelado', color: 'bg-brand-red', icon: XCircle }
 };
 
-export default function Deliveries({ role, businessId }: { role?: string | null, businessId?: string | null }) {
+export default function Deliveries({ businessId }: { role?: string | null, businessId?: string | null }) {
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<DeliveryStatus | 'all'>('all');
   const [isModalOpen, setModalOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
-  const [productSearch, setProductSearch] = useState('');
-
-  const isAdmin = role === 'admin';
 
   // Form
   const [formData, setFormData] = useState({
@@ -74,7 +66,6 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
   useEffect(() => {
     if (!businessId) return;
 
-    // Fetch Products
     const stockUnsubscribe = onSnapshot(query(collection(db, 'produtos'), where('userId', '==', businessId)), (snap) => {
       setProducts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
@@ -105,7 +96,6 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
       updatedAt: new Date().toISOString()
     });
 
-    // If delivered and paid in cash/pix, log transaction
     if (status === 'delivered') {
       await addDoc(collection(db, 'caixa'), {
         userId: businessId,
@@ -118,7 +108,6 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
         paymentMethod: delivery.paymentMethod
       });
 
-      // Baixar estoque if items present and not already deducted
       if (delivery.items && !delivery.stockDeducted) {
         for (const item of delivery.items) {
           if (item.id) {
@@ -132,19 +121,6 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
     }
   };
 
-  const handleAddItem = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    const existing = selectedItems.find(i => i.id === productId);
-    if (existing) {
-      setSelectedItems(selectedItems.map(i => i.id === productId ? { ...i, quantity: i.quantity + 1 } : i));
-    } else {
-      setSelectedItems([...selectedItems, { id: product.id, name: product.name, quantity: 1, price: product.salePrice }]);
-    }
-    // Update total automatically
-    setFormData(prev => ({ ...prev, total: prev.total + product.salePrice }));
-  };
-
   const handleCreateDelivery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
@@ -152,15 +128,13 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
     try {
       await addDoc(collection(db, 'entregas'), {
         ...formData,
-        items: selectedItems,
         userId: businessId,
         createdBy: auth.currentUser?.uid,
         status: 'pending',
-        stockDeducted: false, // Will deduct on delivery
+        stockDeducted: false, 
         createdAt: new Date().toISOString()
       });
       setModalOpen(false);
-      setSelectedItems([]);
       setFormData({
         clientName: '', clientPhone: '', address: '', district: '', 
         number: '', reference: '', deliveryFee: 0, paymentMethod: 'pix', 
@@ -172,52 +146,65 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
   };
 
   const openInMaps = (address: string, number: string, district: string) => {
-    const query = encodeURIComponent(`${address}, ${number}, ${district}, Rio de Janeiro`); // Added generic city if needed, or get from client
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    const searchStr = `${address}, ${number}, ${district}`;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchStr)}`, '_blank');
   };
 
   const filteredDeliveries = deliveries.filter(d => filter === 'all' || d.status === filter);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20">
+        <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 pb-20">
-      <section className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-           <h1 className="text-3xl font-black uppercase tracking-tighter">Entregas</h1>
-           <p className="text-zinc-500 text-sm font-medium uppercase tracking-widest">LOGÍSTICA E DELIVERY</p>
+    <div className="space-y-8 max-w-6xl mx-auto px-4 pb-24 font-sans">
+      
+      {/* Header Premium */}
+      <section className="flex flex-col gap-6">
+        <div className="text-center md:text-left">
+          <h1 className="text-4xl font-black uppercase tracking-tighter text-white">
+            GESTÃO DE <span className="text-brand-red">ENTREGAS</span>
+          </h1>
+          <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.3em] mt-1">Logística Veloz e Inteligente</p>
         </div>
-        {isAdmin && (
-          <button 
-            onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2 bg-brand-red text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-xl shadow-red-600/20"
-          >
-            <Plus className="w-5 h-5" />
-            Novo Pedido
-          </button>
-        )}
+        
+        <button 
+          onClick={() => setModalOpen(true)}
+          className="w-full bg-brand-red hover:bg-red-600 text-white p-8 rounded-[2.5rem] font-black uppercase tracking-widest text-xl transition-all shadow-2xl shadow-red-600/20 active:scale-[0.98] flex items-center justify-center gap-4"
+        >
+          <div className="bg-white/20 p-2 rounded-full">
+            <Truck className="w-8 h-8" />
+          </div>
+          NOVA ENTREGA
+        </button>
       </section>
 
-      {/* Status Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      {/* Status Filter Pills */}
+      <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide py-2">
          {['all', 'pending', 'preparing', 'shipped', 'delivered', 'cancelled'].map(s => (
            <button
              key={s}
              onClick={() => setFilter(s as any)}
              className={cn(
-               "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap",
+               "px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-2 transition-all",
                filter === s 
-                 ? "bg-brand-gold border-brand-gold text-black shadow-lg" 
-                 : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                 ? "bg-brand-red border-brand-red text-white shadow-lg shadow-red-600/20" 
+                 : "bg-zinc-900/50 border-zinc-900 text-zinc-500 hover:border-zinc-800"
              )}
            >
-             {s === 'all' ? 'Tudo' : STATUS_CONFIG[s as DeliveryStatus].label}
+             {s === 'all' ? 'Tudo' : STATUS_CONFIG[s as DeliveryStatus]?.label.toUpperCase()}
            </button>
          ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <AnimatePresence>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <AnimatePresence mode="popLayout">
           {filteredDeliveries.map(delivery => {
-            const StatusIcon = STATUS_CONFIG[delivery.status as DeliveryStatus].icon;
+            const StatusIcon = STATUS_CONFIG[delivery.status as DeliveryStatus]?.icon || Truck;
             return (
               <motion.div 
                 layout
@@ -225,84 +212,118 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 key={delivery.id}
-                className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] overflow-hidden group hover:border-zinc-700 transition-all shadow-2xl"
+                className="bg-zinc-900/40 border border-zinc-800/50 rounded-[3.5rem] overflow-hidden hover:border-zinc-700 transition-all shadow-2xl group relative"
               >
-                 {/* Status Bar */}
-                 <div className={cn("h-1.5 w-full", STATUS_CONFIG[delivery.status as DeliveryStatus].color)} />
+                 <div className={cn("h-3 w-full", STATUS_CONFIG[delivery.status as DeliveryStatus]?.color)} />
                  
-                 <div className="p-6 space-y-6">
+                 <div className="p-10 space-y-8">
                     <div className="flex items-start justify-between">
-                       <div className="flex items-center gap-3">
-                          <div className={cn("p-2 rounded-xl text-white", STATUS_CONFIG[delivery.status as DeliveryStatus].color)}>
-                             <StatusIcon className={cn("w-5 h-5", delivery.status === 'preparing' && "animate-spin")} />
+                       <div className="flex items-center gap-5">
+                          <div className={cn("p-5 rounded-[1.5rem] text-white shadow-lg transition-transform group-hover:scale-110", STATUS_CONFIG[delivery.status as DeliveryStatus]?.color)}>
+                             <StatusIcon className={cn("w-7 h-7", delivery.status === 'preparing' && "animate-spin")} />
                           </div>
-                          <div>
-                             <h3 className="font-black text-lg uppercase tracking-tighter truncate">{delivery.clientName}</h3>
-                             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{delivery.status.toUpperCase()}</p>
+                          <div className="truncate max-w-[200px]">
+                             <h3 className="font-black text-2xl uppercase tracking-tighter text-white leading-none mb-1 truncate">{delivery.clientName}</h3>
+                             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                               {STATUS_CONFIG[delivery.status as DeliveryStatus]?.label}
+                             </p>
                           </div>
                        </div>
-                       <button className="p-2 text-zinc-700 hover:text-white"><MoreVertical className="w-5 h-5" /></button>
+                       <button className="p-4 bg-zinc-800/50 rounded-2xl text-zinc-700 transition-all">
+                         <MoreVertical className="w-6 h-6" />
+                       </button>
                     </div>
 
-                    <div className="space-y-3">
-                       <div className="flex items-start gap-3 text-zinc-400">
-                          <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                          <p className="text-xs font-medium leading-relaxed uppercase">
-                             {delivery.address}, {delivery.number} - {delivery.district}
-                             {delivery.reference && <span className="block text-[10px] text-zinc-600 mt-1">{delivery.reference}</span>}
+                    <div className="bg-black/60 rounded-[2.5rem] p-8 space-y-6 border border-zinc-800/50 shadow-inner">
+                       <div className="flex items-start gap-5">
+                          <div className="p-3 bg-brand-red/10 rounded-xl">
+                            <MapPin className="w-6 h-6 text-brand-red" />
+                          </div>
+                          <div className="space-y-1">
+                             <p className="text-lg font-black text-white uppercase leading-tight italic">
+                                {delivery.address}, {delivery.number}
+                             </p>
+                             <p className="text-xs font-black text-zinc-500 uppercase tracking-widest">
+                                {delivery.district}
+                             </p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-5">
+                          <div className="p-3 bg-brand-red/10 rounded-xl">
+                            <Phone className="w-6 h-6 text-brand-red" />
+                          </div>
+                          <p className="text-xl font-black text-white tracking-[0.1em]">{delivery.clientPhone}</p>
+                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-8 bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem]">
+                       <div>
+                          <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-1">Total Geral</span>
+                          <p className="text-3xl font-black text-white tabular-nums tracking-tighter">
+                            {formatCurrency(delivery.total + (delivery.deliveryFee || 0))}
                           </p>
                        </div>
-                       <div className="flex items-center gap-3 text-zinc-400">
-                          <Phone className="w-4 h-4 shrink-0" />
-                          <p className="text-xs font-bold">{delivery.clientPhone}</p>
-                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 py-4 border-y border-zinc-800/50">
-                       <div>
-                          <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Total Pedido</span>
-                          <p className="text-lg font-black text-white">{formatCurrency(delivery.total + (delivery.deliveryFee || 0))}</p>
-                       </div>
                        <div className="text-right">
-                          <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">Pagamento</span>
-                          <div className="flex items-center justify-end gap-2">
-                             <p className="text-xs font-black text-brand-gold uppercase">{delivery.paymentMethod}</p>
-                             {delivery.paymentMethod === 'cash' && delivery.changeFor > 0 && (
-                               <span className="text-[10px] text-emerald-500 font-bold">TROCO: {formatCurrency(delivery.changeFor)}</span>
-                             )}
-                          </div>
+                          <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-2">Pagamento</span>
+                          <span className="inline-block px-5 py-2 bg-brand-red text-white rounded-full text-[12px] font-black uppercase tracking-widest shadow-lg shadow-red-600/20">
+                             {delivery.paymentMethod}
+                          </span>
                        </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 gap-5 pt-2">
                        <button 
-                        onClick={() => openInMaps(delivery.address, delivery.number, delivery.district)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest border border-zinc-700"
+                         onClick={() => openInMaps(delivery.address, delivery.number, delivery.district)}
+                         className="flex items-center justify-center gap-4 bg-zinc-800 hover:bg-white hover:text-black py-6 rounded-[2rem] transition-all font-black text-xs uppercase tracking-[0.2em] border border-zinc-700 shadow-xl active:scale-95"
                        >
-                          <Navigation className="w-4 h-4" />
-                          Mapa
+                          <Navigation className="w-6 h-6" />
+                          MAPAS
                        </button>
                        <button 
                          onClick={() => { window.open(`https://wa.me/55${delivery.clientPhone.replace(/\D/g,'')}`, '_blank') }}
-                         className="flex-1 flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white py-3 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest border border-emerald-500/20"
+                         className="flex items-center justify-center gap-4 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white py-6 rounded-[2rem] transition-all font-black text-xs uppercase tracking-[0.2em] border border-emerald-500/20 shadow-xl active:scale-95"
                        >
-                          WhatsApp
+                          <Phone className="w-6 h-6" />
+                          WHATSAPP
                        </button>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="pt-4">
                        {delivery.status !== 'delivered' && delivery.status !== 'cancelled' && (
-                         <>
+                         <div className="grid grid-cols-1 gap-5">
                             {delivery.status === 'pending' && (
-                              <button onClick={() => updateStatus(delivery.id, 'preparing')} className="bg-amber-500 text-black text-[10px] font-black py-2 rounded-xl col-span-3">Iniciar Preparo</button>
+                              <button 
+                                onClick={() => updateStatus(delivery.id, 'preparing')} 
+                                className="w-full bg-amber-500 hover:bg-amber-400 text-black py-8 rounded-[2.5rem] font-black uppercase tracking-widest text-xl shadow-2xl shadow-amber-500/20 active:scale-95 transition-all"
+                              >
+                                INICIAR PREPARO
+                              </button>
                             )}
                             {delivery.status === 'preparing' && (
-                              <button onClick={() => updateStatus(delivery.id, 'shipped')} className="bg-blue-500 text-white text-[10px] font-black py-2 rounded-xl col-span-3">Saiu para Entrega</button>
+                              <button 
+                                onClick={() => updateStatus(delivery.id, 'shipped')} 
+                                className="w-full bg-blue-600 hover:bg-blue-500 text-white py-8 rounded-[2.5rem] font-black uppercase tracking-widest text-xl shadow-2xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-4"
+                              >
+                                <Truck className="w-8 h-8" />
+                                DESPACHAR PEDIDO
+                              </button>
                             )}
                             {delivery.status === 'shipped' && (
-                              <button onClick={() => updateStatus(delivery.id, 'delivered')} className="bg-emerald-500 text-white text-[10px] font-black py-2 rounded-xl col-span-3">Confirmar Entrega</button>
+                              <button 
+                                onClick={() => updateStatus(delivery.id, 'delivered')} 
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-8 rounded-[2.5rem] font-black uppercase tracking-widest text-xl shadow-2xl shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-4"
+                              >
+                                <CheckCircle2 className="w-8 h-8" />
+                                CONFIRMAR ENTREGA
+                              </button>
                             )}
-                         </>
+                         </div>
+                       )}
+                       {delivery.status === 'delivered' && (
+                         <div className="bg-emerald-500/10 border-2 border-emerald-500/20 py-6 rounded-[2.5rem] flex items-center justify-center gap-4 shadow-inner">
+                            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                            <span className="text-sm font-black text-emerald-500 uppercase tracking-[0.3em]">ENTREGA FINALIZADA</span>
+                         </div>
                        )}
                     </div>
                  </div>
@@ -312,106 +333,67 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
         </AnimatePresence>
       </div>
 
-      {/* Create Delivery Modal */}
+      {/* Modal - Simplificado Premium */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setModalOpen(false)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-             <motion.div initial={{opacity:0, scale:0.9, y:20}} animate={{opacity:1, scale:1, y:0}} exit={{opacity:0, scale:0.9, y:20}} className="relative w-full max-w-xl bg-zinc-950 border border-zinc-900 rounded-[2.5rem] shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-8">
-                   <h2 className="text-2xl font-black uppercase tracking-tighter">Novo Pedido Delivery</h2>
-                   <button onClick={()=>setModalOpen(false)} className="p-2 text-zinc-500"><XCircle /></button>
+          <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
+             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setModalOpen(false)} className="absolute inset-0 bg-black/98 backdrop-blur-2xl" />
+             <motion.div 
+               initial={{y:"100%"}} animate={{y:0}} exit={{y:"100%"}} 
+               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+               className="relative w-full max-w-xl bg-zinc-950 border-t md:border border-zinc-800 rounded-t-[4rem] md:rounded-[4rem] p-10 pb-16 overflow-y-auto max-h-[96vh] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] scrollbar-hide"
+             >
+                <div className="flex items-center justify-between mb-10">
+                   <div className="flex flex-col">
+                     <h2 className="text-4xl font-black uppercase tracking-tighter text-white leading-none">NOVA <span className="text-brand-red">ENTREGA</span></h2>
+                     <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-2">Logística Eskinão 2</span>
+                   </div>
+                   <button onClick={()=>setModalOpen(false)} className="p-5 bg-zinc-900 rounded-3xl text-zinc-500 hover:text-white transition-all active:scale-90 border border-zinc-800"><XCircle className="w-8 h-8" /></button>
                 </div>
 
-                <form onSubmit={handleCreateDelivery} className="space-y-6">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                         <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Cliente</label>
-                         <input required type="text" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white focus:ring-2 focus:ring-brand-red/50 outline-none font-bold uppercase transition-all" value={formData.clientName} onChange={e=>setFormData({...formData, clientName: e.target.value.toUpperCase()})} />
+                <form onSubmit={handleCreateDelivery} className="space-y-8">
+                   <div className="space-y-6">
+                      <div className="space-y-2 px-4">
+                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em]">Nome do Cliente</span>
+                         <input required type="text" className="w-full bg-zinc-900/50 border-2 border-zinc-900 focus:border-brand-red/30 rounded-3xl p-6 text-white font-black uppercase text-xl focus:outline-none transition-all placeholder:text-zinc-800" placeholder="EX: MARCOS REIS" value={formData.clientName} onChange={e=>setFormData({...formData, clientName: e.target.value.toUpperCase()})} />
                       </div>
-                      <div className="space-y-1">
-                         <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Telefone</label>
-                         <input required type="tel" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white focus:ring-2 focus:ring-brand-red/50 outline-none font-bold placeholder:text-zinc-700" placeholder="(11) 99999-9999" value={formData.clientPhone} onChange={e=>setFormData({...formData, clientPhone: e.target.value})} />
-                      </div>
-                   </div>
-
-                   <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Endereço (Rua/Av)</label>
-                      <input required type="text" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white focus:ring-2 focus:ring-brand-red/50 outline-none font-bold uppercase" value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} />
-                   </div>
-
-                   <div className="grid grid-cols-3 gap-4">
-                      <div className="col-span-2 space-y-1">
-                         <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Bairro</label>
-                         <input required type="text" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white focus:ring-2 focus:ring-brand-red/50 outline-none font-bold uppercase" value={formData.district} onChange={e=>setFormData({...formData, district: e.target.value})} />
-                      </div>
-                      <div className="space-y-1">
-                         <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Nº</label>
-                         <input required type="text" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white focus:ring-2 focus:ring-brand-red/50 outline-none font-bold uppercase" value={formData.number} onChange={e=>setFormData({...formData, number: e.target.value})} />
+                      <div className="space-y-2 px-4">
+                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em]">Telefone</span>
+                         <input required type="tel" placeholder="21999999999" className="w-full bg-zinc-900/50 border-2 border-zinc-900 focus:border-brand-red/30 rounded-3xl p-6 text-white font-black uppercase text-xl focus:outline-none transition-all" value={formData.clientPhone} onChange={e=>setFormData({...formData, clientPhone: e.target.value})} />
                       </div>
                    </div>
 
-                   <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Referência</label>
-                      <input type="text" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white focus:ring-2 focus:ring-brand-red/50 outline-none font-bold uppercase" value={formData.reference} onChange={e=>setFormData({...formData, reference: e.target.value})} />
-                   </div>
-
-                   {/* Item Selection */}
-                   <div className="space-y-3 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-900">
-                      <div className="flex items-center justify-between mb-2">
-                         <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Itens do Pedido</label>
-                         <span className="text-[10px] font-bold text-brand-gold">{selectedItems.length} selecionados</span>
+                   <div className="bg-zinc-900/40 p-8 rounded-[3rem] border border-zinc-900/50 space-y-6 shadow-inner">
+                      <div className="space-y-2">
+                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] ml-2">Endereço Completo</span>
+                         <input required type="text" className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-5 text-white font-bold uppercase focus:border-brand-red/50 outline-none transition-all" placeholder="RUA / AVENIDA" value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value.toUpperCase()})} />
                       </div>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                         {selectedItems.map(item => (
-                           <div key={item.id} className="bg-zinc-800 text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-2">
-                              {item.quantity}x {item.name}
-                              <button type="button" onClick={() => setSelectedItems(selectedItems.filter(i => i.id !== item.id))} className="text-rose-500 hover:text-rose-400">×</button>
-                           </div>
-                         ))}
-                      </div>
-
-                      <div className="relative">
-                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-                         <input 
-                           type="text" 
-                           placeholder="Buscar produto..." 
-                           className="w-full bg-black border border-zinc-800 rounded-xl p-3 pl-10 text-xs font-bold uppercase text-white outline-none focus:border-brand-red/50"
-                           value={productSearch}
-                           onChange={e => setProductSearch(e.target.value)}
-                         />
-                      </div>
-
-                      {productSearch && (
-                        <div className="max-h-32 overflow-y-auto bg-black rounded-xl border border-zinc-800 mt-2">
-                           {products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).map(p => (
-                             <button
-                               key={p.id} type="button"
-                               onClick={() => { handleAddItem(p.id); setProductSearch(''); }}
-                               className="w-full text-left p-2 hover:bg-zinc-900 text-[10px] font-bold uppercase border-b border-zinc-900 last:border-0"
-                             >
-                                {p.name} - {formatCurrency(p.salePrice)}
-                             </button>
-                           ))}
-                        </div>
-                      )}
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                         <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Valor Produtos (R$)</label>
-                         <input required type="number" step="0.01" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white font-bold" value={formData.total} onChange={e=>setFormData({...formData, total: Number(e.target.value)})} />
-                      </div>
-                      <div className="space-y-1">
-                         <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Taxa Entrega (R$)</label>
-                         <input required type="number" step="0.01" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white font-bold text-brand-gold" value={formData.deliveryFee} onChange={e=>setFormData({...formData, deliveryFee: Number(e.target.value)})} />
+                      <div className="grid grid-cols-2 gap-5">
+                         <div className="space-y-2">
+                            <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] ml-2">Nº</span>
+                            <input required type="text" className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-5 text-white font-bold uppercase focus:border-brand-red/50 outline-none" placeholder="123" value={formData.number} onChange={e=>setFormData({...formData, number: e.target.value})} />
+                         </div>
+                         <div className="space-y-2">
+                            <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] ml-2">Bairro</span>
+                            <input required type="text" className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-5 text-white font-bold uppercase focus:border-brand-red/50 outline-none" placeholder="BAIRRO" value={formData.district} onChange={e=>setFormData({...formData, district: e.target.value.toUpperCase()})} />
+                         </div>
                       </div>
                    </div>
 
-                   <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest block text-center">Pagamento na Entrega</label>
-                      <div className="grid grid-cols-3 gap-2">
+                   <div className="grid grid-cols-2 gap-6 px-4">
+                      <div className="space-y-2">
+                         <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em]">Valor Pedido</span>
+                         <input required type="number" step="0.01" className="w-full bg-zinc-900 border-2 border-zinc-900 rounded-3xl p-6 text-white font-black text-2xl focus:border-white/20 outline-none transition-all" value={formData.total} onChange={e=>setFormData({...formData, total: Number(e.target.value)})} />
+                      </div>
+                      <div className="space-y-2">
+                         <span className="text-[11px] font-black text-brand-red uppercase tracking-[0.2em]">Taxa Entrega</span>
+                         <input required type="number" step="0.01" className="w-full bg-zinc-900 border-2 border-brand-red/20 rounded-3xl p-6 text-brand-red font-black text-2xl focus:border-brand-red outline-none transition-all" value={formData.deliveryFee} onChange={e=>setFormData({...formData, deliveryFee: Number(e.target.value)})} />
+                      </div>
+                   </div>
+
+                   <div className="space-y-5">
+                      <span className="text-[11px] font-black uppercase text-zinc-600 tracking-[0.4em] block text-center">FORMA DE PAGAMENTO</span>
+                      <div className="grid grid-cols-3 gap-4">
                          {[
                            { id: 'pix', icon: QrCode, label: 'PIX' },
                            { id: 'cash', icon: Banknote, label: 'DN' },
@@ -421,28 +403,21 @@ export default function Deliveries({ role, businessId }: { role?: string | null,
                              key={method.id} type="button"
                              onClick={() => setFormData({...formData, paymentMethod: method.id})}
                              className={cn(
-                               "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all",
+                               "flex flex-col items-center gap-4 p-6 rounded-[2.5rem] border-2 transition-all active:scale-95",
                                formData.paymentMethod === method.id 
-                                 ? "bg-brand-red border-brand-red text-white shadow-lg shadow-red-600/20 scale-105" 
-                                 : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                                 ? "bg-brand-red border-brand-red text-white shadow-2xl shadow-red-600/40 translate-y-[-4px]" 
+                                 : "bg-black border-zinc-900 text-zinc-600"
                              )}
                            >
-                             <method.icon className="w-5 h-5" />
-                             <span className="text-[10px] font-black">{method.label}</span>
+                             <method.icon className="w-8 h-8" />
+                             <span className="text-[10px] font-black tracking-widest">{method.label}</span>
                            </button>
                          ))}
                       </div>
                    </div>
 
-                   {formData.paymentMethod === 'cash' && (
-                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest ml-1">Troco para quanto?</label>
-                        <input type="number" step="0.01" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white font-bold" value={formData.changeFor} onChange={e=>setFormData({...formData, changeFor: Number(e.target.value)})} />
-                     </div>
-                   )}
-
-                   <button type="submit" className="w-full bg-brand-red text-white py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 active:scale-95 transition-all mt-4">
-                      Criar Pedido de Entrega
+                   <button type="submit" className="w-full bg-brand-red text-white py-10 rounded-[3rem] font-black uppercase tracking-[0.3em] text-2xl shadow-[0_20px_50px_rgba(220,38,38,0.3)] active:scale-95 transition-all mt-8 border-t border-white/20">
+                      CADASTRAR ENTREGA
                    </button>
                 </form>
              </motion.div>
