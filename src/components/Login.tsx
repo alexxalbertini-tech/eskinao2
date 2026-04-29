@@ -70,7 +70,7 @@ export default function Login() {
       console.error("Falha Crítica na Autenticação:", err);
       const code = err.code || err.message || 'unknown';
       const translated = translateError(code);
-      setError(`${translated} [${code}]`);
+      setError(translated);
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ export default function Login() {
     } catch (err: any) {
       console.error("Erro técnico no cadastro:", err);
       const code = err.code || err.message || 'unknown';
-      setError(`${translateError(code)} [${code}]`);
+      setError(translateError(code));
     } finally {
       setLoading(false);
     }
@@ -113,7 +113,7 @@ export default function Login() {
     } catch (err: any) {
       console.error("Erro técnico no reset de senha:", err);
       const code = err.code || err.message || 'unknown';
-      setError(`${translateError(code)} [${code}]`);
+      setError(translateError(code));
     } finally {
       setLoading(false);
     }
@@ -122,34 +122,34 @@ export default function Login() {
   const translateError = (code: string) => {
     const errorStr = String(code).toLowerCase();
     
-    if (errorStr.includes('user-not-found') || errorStr.includes('wrong-password') || errorStr.includes('invalid-credential')) {
+    if (errorStr.includes('user-not-found') || errorStr.includes('wrong-password') || errorStr.includes('invalid-credential') || errorStr.includes('invalid-login-credentials')) {
       return 'E-mail ou senha incorretos.';
     }
     if (errorStr.includes('email-already-in-use')) {
-      return 'Este e-mail já está cadastrado.';
+      return 'Este e-mail já está sendo utilizado.';
     }
     if (errorStr.includes('invalid-email')) {
       return 'O formato do e-mail é inválido.';
     }
     if (errorStr.includes('network-request-failed')) {
-      return 'Falha de conexão com a internet.';
+      return 'Erro de conexão: Verifique sua internet.';
     }
     if (errorStr.includes('too-many-requests')) {
-      return 'Muitas tentativas. Tente mais tarde.';
+      return 'Muitas tentativas malsucedidas. Tente novamente mais tarde.';
     }
     if (errorStr.includes('operation-not-allowed')) {
-      return 'Login por senha desativado no Firebase.';
+      return 'Login por e-mail/senha não habilitado no Console.';
     }
     if (errorStr.includes('user-disabled')) {
-      return 'Esta conta foi desativada.';
+      return 'Esta conta foi desativada pelo administrador.';
     }
     if (errorStr.includes('weak-password')) {
-      return 'A senha deve ter pelo menos 6 caracteres.';
+      return 'A senha deve ter no mínimo 6 caracteres.';
     }
 
-    if (errorStr === 'preencha todos os campos.') return 'Preencha todos os campos.';
+    if (errorStr === 'preencha todos os campos.') return 'Preencha todos os campos para continuar.';
     
-    return 'Erro na autenticação.';
+    return 'Erro ao acessar o sistema. Verifique os dados ou contate o suporte.';
   };
 
   return (
