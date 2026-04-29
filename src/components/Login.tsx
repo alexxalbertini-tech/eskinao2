@@ -40,40 +40,37 @@ export default function Login() {
         throw { code: 'auth/invalid-email' };
       }
 
-      console.log("Attempting login for:", email);
+      console.log("Iniciando login no Firebase Auth para:", email);
 
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log("Login realizado com sucesso! UID:", userCredential.user.uid);
         setSuccess('Acesso concedido! Entrando...');
-        // The App component will detect auth change and redirect
       } catch (logErr: any) {
+        console.error("Erro técnico no login Firebase:", logErr);
         const errorStr = String(logErr.code || logErr.message).toLowerCase();
-        console.error("Firebase Login Error Detail:", logErr);
 
         // Special case: If it's the requested admin and it doesn't exist yet
         if (email.toLowerCase() === adminEmail && 
            (errorStr.includes('user-not-found') || errorStr.includes('invalid-credential'))) {
           
           if (password === adminPass) {
-            console.log("Creating default administrator account...");
+            console.log("Criando conta de administrador padrão...");
             const userCred = await createUserWithEmailAndPassword(auth, email, password);
             await updateProfile(userCred.user, { displayName: 'ADMINISTRADOR' });
             setSuccess('Admin configurado com sucesso!');
           } else {
-            // Wrong password for the specific admin email
             throw { code: 'auth/wrong-password' };
           }
         } else {
-          // Normal user login failure
           throw logErr;
         }
       }
     } catch (err: any) {
-      console.error("Firebase Auth Exception:", err);
+      console.error("Falha Crítica na Autenticação:", err);
       const code = err.code || err.message || 'unknown';
       const translated = translateError(code);
-      // Show both the message and the code for total transparency as requested
-      setError(`${translated} (${code})`);
+      setError(`${translated} [${code}]`);
     } finally {
       setLoading(false);
     }
@@ -88,15 +85,17 @@ export default function Login() {
       if (password.length < 6) {
         throw { code: 'auth/weak-password' };
       }
+      console.log("Iniciando criação de conta para:", email);
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("Conta criada com sucesso! UID:", userCred.user.uid);
       if (name) {
         await updateProfile(userCred.user, { displayName: name });
       }
       setSuccess('Conta criada com sucesso! Bem-vindo.');
     } catch (err: any) {
-      console.error("Registration Error Detail:", err);
+      console.error("Erro técnico no cadastro:", err);
       const code = err.code || err.message || 'unknown';
-      setError(`${translateError(code)} (${code})`);
+      setError(`${translateError(code)} [${code}]`);
     } finally {
       setLoading(false);
     }
@@ -107,13 +106,14 @@ export default function Login() {
     setLoading(true);
     setError(null);
     try {
+      console.log("Solicitando recuperação de senha para:", email);
       await sendPasswordResetEmail(auth, email);
       setSuccess('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
       setTimeout(() => setIsForgotPassword(false), 3000);
     } catch (err: any) {
-      console.error("Password Reset Error:", err);
+      console.error("Erro técnico no reset de senha:", err);
       const code = err.code || err.message || 'unknown';
-      setError(`${translateError(code)} (${code})`);
+      setError(`${translateError(code)} [${code}]`);
     } finally {
       setLoading(false);
     }
