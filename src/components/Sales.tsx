@@ -44,10 +44,12 @@ export default function Sales({ businessId }: { role?: string | null, businessId
 
   useEffect(() => {
     if (!businessId) return;
-    const q = query(collection(db, 'produtos'), where('userId', '==', businessId));
+    const q = query(collection(db, 'usuarios', businessId, 'produtos'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(data);
+    }, (err) => {
+      console.error("Erro no onSnapshot de produtos (vendas):", err);
     });
     return () => unsubscribe();
   }, [businessId]);
@@ -79,16 +81,32 @@ export default function Sales({ businessId }: { role?: string | null, businessId
 
   const handleCheckout = async () => {
     if (cart.length === 0 || isProcessing) return;
+    
+    if (!auth.currentUser) {
+      alert("Usuário não autenticado.");
+      return;
+    }
+
+    if (!businessId) {
+      alert("ID da empresa não encontrado.");
+      return;
+    }
+
     setProcessing(true);
     setLastTotal(total);
 
     try {
       // 1. Transaction Data
-      const items = cart.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.salePrice }));
+      const items = cart.map(i => ({ 
+        id: i.id, 
+        name: i.name, 
+        quantity: Number(i.quantity) || 0, 
+        price: Number(i.salePrice) || 0 
+      }));
 
       if (paymentMethod === 'delivery') {
         // Create Delivery Record
-        await addDoc(collection(db, 'entregas'), {
+        await addDoc(collection(db, 'usuarios', businessId, 'entregas'), {
           userId: businessId,
           createdBy: auth.currentUser?.uid,
           clientName: 'CLIENTE BALCÃO (VENDA RÁPIDA)',
@@ -96,7 +114,7 @@ export default function Sales({ businessId }: { role?: string | null, businessId
           address: 'RETIRADA NO BALCÃO',
           district: '',
           number: '',
-          total: total,
+          total: Number(total),
           deliveryFee: 0,
           paymentMethod: 'cash',
           status: 'pending',
@@ -105,11 +123,11 @@ export default function Sales({ businessId }: { role?: string | null, businessId
         });
       } else {
         // Direct Sale
-        await addDoc(collection(db, 'vendas'), {
+        await addDoc(collection(db, 'usuarios', businessId, 'vendas'), {
           userId: businessId,
           createdBy: auth.currentUser?.uid,
           type: 'sale',
-          amount: total,
+          amount: Number(total),
           description: `VENDA PDV: ${cart.length} ITENS`,
           category: 'Vendas',
           paymentMethod,
@@ -119,11 +137,11 @@ export default function Sales({ businessId }: { role?: string | null, businessId
 
         // Add to Cashier if not 'fiado'
         if (paymentMethod !== 'fiado') {
-           await addDoc(collection(db, 'caixa'), {
+           await addDoc(collection(db, 'usuarios', businessId, 'caixa'), {
              userId: businessId,
              createdBy: auth.currentUser?.uid,
              type: 'income',
-             amount: total,
+             amount: Number(total),
              description: `VENDA PDV: ${cart.length} ITENS`,
              category: 'Vendas',
              date: new Date().toISOString(),
@@ -135,17 +153,17 @@ export default function Sales({ businessId }: { role?: string | null, businessId
       // 2. Inventory Deduction
       // Deduct immediately for all direct sales and counter deliveries
       for (const item of cart) {
-        await updateDoc(doc(db, 'produtos', item.id), {
-          quantity: increment(-item.quantity)
+        await updateDoc(doc(db, 'usuarios', businessId, 'produtos', item.id), {
+          quantity: increment(-(Number(item.quantity) || 0))
         });
 
-        await addDoc(collection(db, 'estoque'), {
+        await addDoc(collection(db, 'usuarios', businessId, 'estoque'), {
           userId: businessId,
           productId: item.id,
           productName: item.name,
-          quantity: item.quantity,
+          quantity: Number(item.quantity) || 0,
           type: 'out',
-          totalSale: item.salePrice * item.quantity,
+          totalSale: Number(item.salePrice * item.quantity),
           createdBy: auth.currentUser?.uid,
           date: new Date().toISOString()
         });
@@ -154,8 +172,9 @@ export default function Sales({ businessId }: { role?: string | null, businessId
       setCart([]);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
-      console.error("Checkout failed", error);
+    } catch (err: any) {
+      console.error("Checkout failed:", err);
+      alert(`Erro ao finalizar venda: ${err.code || err.message}`);
     } finally {
       setProcessing(false);
     }

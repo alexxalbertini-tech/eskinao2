@@ -54,10 +54,13 @@ export default function Rentals({ role, businessId }: { role?: string | null, bu
 
   useEffect(() => {
     if (!businessId) return;
-    const q = query(collection(db, 'alugueis'), where('userId', '==', businessId));
+    const q = query(collection(db, 'usuarios', businessId, 'alugueis'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setRentals(data);
+      setLoading(false);
+    }, (err) => {
+      console.error("Erro no onSnapshot de alugueis:", err);
       setLoading(false);
     });
     return () => unsubscribe();
@@ -65,19 +68,30 @@ export default function Rentals({ role, businessId }: { role?: string | null, bu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessId) return;
+    if (!auth.currentUser) {
+      alert("Usuário não autenticado.");
+      return;
+    }
+    if (!businessId) {
+      alert("ID da empresa não encontrado.");
+      return;
+    }
 
     try {
-      await addDoc(collection(db, 'alugueis'), {
+      await addDoc(collection(db, 'usuarios', businessId, 'alugueis'), {
         ...formData,
+        clientName: formData.clientName.trim().toUpperCase(),
+        clientPhone: formData.clientPhone.trim(),
+        observations: formData.observations.trim().toUpperCase(),
         userId: businessId,
         createdBy: auth.currentUser?.uid,
         createdAt: new Date().toISOString()
       });
       setModalOpen(false);
       resetForm();
-    } catch (error) {
-      console.error("Error saving rental", error);
+    } catch (err: any) {
+      console.error("Erro ao salvar aluguel:", err);
+      alert("Erro ao salvar aluguel no banco.");
     }
   };
 
@@ -97,8 +111,13 @@ export default function Rentals({ role, businessId }: { role?: string | null, bu
   };
 
   const toggleStatus = async (rental: any) => {
+    if (!businessId) return;
     const newStatus = rental.status === 'pending' ? 'returned' : 'pending';
-    await updateDoc(doc(db, 'alugueis', rental.id), { status: newStatus });
+    try {
+      await updateDoc(doc(db, 'usuarios', businessId, 'alugueis', rental.id), { status: newStatus });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const items = [

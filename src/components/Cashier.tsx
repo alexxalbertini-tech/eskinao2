@@ -45,22 +45,24 @@ export default function Cashier({ businessId }: { role?: string | null, business
   useEffect(() => {
     if (!businessId) return;
     const q = query(
-      collection(db, 'caixa'), 
-      where('userId', '==', businessId),
+      collection(db, 'usuarios', businessId, 'caixa'), 
       orderBy('date', 'desc')
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setTransactions(data);
+    }, (err) => {
+      console.error("Erro no onSnapshot de caixa:", err);
     });
 
     const rentalsQ = query(
-      collection(db, 'alugueis'), 
-      where('userId', '==', businessId),
+      collection(db, 'usuarios', businessId, 'alugueis'), 
       where('status', '==', 'pending')
     );
     const unsubscribeRentals = onSnapshot(rentalsQ, snapshot => {
       setActiveRentals(snapshot.size);
+    }, (err) => {
+      console.error("Erro no onSnapshot de alugueis (caixa):", err);
     });
 
     return () => {
@@ -71,19 +73,29 @@ export default function Cashier({ businessId }: { role?: string | null, business
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessId) return;
+    if (!auth.currentUser) {
+      alert("Usuário não autenticado.");
+      return;
+    }
+    if (!businessId) {
+      alert("ID da empresa não encontrado.");
+      return;
+    }
     
     try {
-      await addDoc(collection(db, 'caixa'), {
+      await addDoc(collection(db, 'usuarios', businessId, 'caixa'), {
         ...formData,
+        description: formData.description.trim().toUpperCase(),
+        amount: Number(formData.amount) || 0,
         userId: businessId,
         createdBy: auth.currentUser?.uid,
         date: new Date().toISOString()
       });
       setModalOpen(false);
       setFormData({ type: 'income', amount: 0, description: '', category: 'Outros', date: new Date().toISOString() });
-    } catch (error) {
-      console.error("Erro ao salvar lançamento:", error);
+    } catch (err: any) {
+      console.error("Erro ao salvar lançamento:", err);
+      alert("Erro ao salvar lançamento: " + (err.code || err.message));
     }
   };
 
@@ -249,7 +261,15 @@ export default function Cashier({ businessId }: { role?: string | null, business
                          {(tx.type === 'income' || tx.type === 'sale') ? '+' : '-'} {formatCurrency(tx.amount)}
                        </span>
                        <button 
-                         onClick={async () => { if(confirm('Remover?')) await deleteDoc(doc(db, 'caixa', tx.id)) }}
+                         onClick={async () => { 
+                           if(confirm('Remover?')) {
+                             try {
+                               await deleteDoc(doc(db, 'usuarios', businessId!, 'caixa', tx.id));
+                             } catch (err: any) {
+                               alert("Erro ao excluir: " + (err.code || err.message));
+                             }
+                           } 
+                         }}
                          className="p-3 bg-zinc-900 rounded-lg text-zinc-700 hover:text-rose-500 transition-all md:opacity-0 group-hover:opacity-100"
                        >
                           <X className="w-4 h-4" />

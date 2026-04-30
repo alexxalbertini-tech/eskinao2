@@ -66,19 +66,21 @@ export default function Deliveries({ businessId }: { role?: string | null, busin
   useEffect(() => {
     if (!businessId) return;
 
-    const stockUnsubscribe = onSnapshot(query(collection(db, 'produtos'), where('userId', '==', businessId)), (snap) => {
+    const stockUnsubscribe = onSnapshot(query(collection(db, 'usuarios', businessId, 'produtos')), (snap) => {
       setProducts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (err) => console.error("Erro no onSnapshot de produtos (entregas):", err));
 
     const q = query(
-      collection(db, 'entregas'),
-      where('userId', '==', businessId),
+      collection(db, 'usuarios', businessId, 'entregas'),
       orderBy('createdAt', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setDeliveries(data);
+      setLoading(false);
+    }, (err) => {
+      console.error("Erro no onSnapshot de entregas:", err);
       setLoading(false);
     });
 
@@ -89,45 +91,63 @@ export default function Deliveries({ businessId }: { role?: string | null, busin
   }, [businessId]);
 
   const updateStatus = async (id: string, status: DeliveryStatus) => {
-    const delivery = deliveries.find(d => d.id === id);
-    await updateDoc(doc(db, 'entregas', id), { 
-      status,
-      updatedBy: auth.currentUser?.uid,
-      updatedAt: new Date().toISOString()
-    });
+    if (!businessId || !auth.currentUser) return;
+    try {
+      const delivery = deliveries.find(d => d.id === id);
+      if (!delivery) return;
 
-    if (status === 'delivered') {
-      await addDoc(collection(db, 'caixa'), {
-        userId: businessId,
-        createdBy: auth.currentUser?.uid,
-        type: 'income',
-        amount: delivery.total + (delivery.deliveryFee || 0),
-        description: `ENTREGA CONCLUÍDA: ${delivery.clientName}`,
-        category: 'Vendas',
-        date: new Date().toISOString(),
-        paymentMethod: delivery.paymentMethod
+      await updateDoc(doc(db, 'usuarios', businessId, 'entregas', id), { 
+        status,
+        updatedBy: auth.currentUser?.uid,
+        updatedAt: new Date().toISOString()
       });
 
-      if (delivery.items && !delivery.stockDeducted) {
-        for (const item of delivery.items) {
-          if (item.id) {
-            await updateDoc(doc(db, 'produtos', item.id), {
-              quantity: increment(-item.quantity)
-            });
+      if (status === 'delivered') {
+        await addDoc(collection(db, 'usuarios', businessId, 'caixa'), {
+          userId: businessId,
+          createdBy: auth.currentUser?.uid,
+          type: 'income',
+          amount: Number(delivery.total || 0) + (Number(delivery.deliveryFee) || 0),
+          description: `ENTREGA CONCLUÍDA: ${delivery.clientName}`,
+          category: 'Vendas',
+          date: new Date().toISOString(),
+          paymentMethod: delivery.paymentMethod
+        });
+
+        if (delivery.items && !delivery.stockDeducted) {
+          for (const item of delivery.items) {
+            if (item.id) {
+              await updateDoc(doc(db, 'usuarios', businessId, 'produtos', item.id), {
+                quantity: increment(-(Number(item.quantity) || 0))
+              });
+            }
           }
+          await updateDoc(doc(db, 'usuarios', businessId, 'entregas', id), { stockDeducted: true });
         }
-        await updateDoc(doc(db, 'entregas', id), { stockDeducted: true });
       }
+    } catch (err: any) {
+      console.error("Erro ao atualizar status de entrega:", err);
+      alert("Erro ao atualizar status: " + (err.code || err.message));
     }
   };
 
   const handleCreateDelivery = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessId) return;
+    if (!businessId || !auth.currentUser) return;
 
     try {
-      await addDoc(collection(db, 'entregas'), {
-        ...formData,
+      await addDoc(collection(db, 'usuarios', businessId, 'entregas'), {
+        clientName: formData.clientName.trim().toUpperCase(),
+        clientPhone: formData.clientPhone.trim(),
+        address: formData.address.trim().toUpperCase(),
+        district: formData.district.trim().toUpperCase(),
+        number: formData.number.trim(),
+        reference: formData.reference.trim().toUpperCase(),
+        deliveryFee: Number(formData.deliveryFee) || 0,
+        paymentMethod: formData.paymentMethod,
+        total: Number(formData.total) || 0,
+        observations: formData.observations.trim(),
+        changeFor: Number(formData.changeFor) || 0,
         userId: businessId,
         createdBy: auth.currentUser?.uid,
         status: 'pending',
@@ -140,8 +160,9 @@ export default function Deliveries({ businessId }: { role?: string | null, busin
         number: '', reference: '', deliveryFee: 0, paymentMethod: 'pix', 
         total: 0, observations: '', changeFor: 0
       });
-    } catch (error) {
-      console.error(error);
+    } catch (err: any) {
+      console.error("Erro ao criar entrega:", err);
+      alert("Erro ao criar entrega: " + (err.code || err.message));
     }
   };
 

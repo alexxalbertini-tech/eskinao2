@@ -35,9 +35,11 @@ export default function Quotes({ role, businessId }: { role?: string | null, bus
 
   useEffect(() => {
     if (!businessId) return;
-    const q = query(collection(db, 'produtos'), where('userId', '==', businessId));
+    const q = query(collection(db, 'usuarios', businessId, 'produtos'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      console.error("Erro no onSnapshot de produtos (orcamentos):", err);
     });
     return () => unsubscribe();
   }, [businessId]);
@@ -62,18 +64,23 @@ export default function Quotes({ role, businessId }: { role?: string | null, bus
   const total = cart.reduce((acc, item) => acc + (item.salePrice * item.quantity), 0);
 
   const saveQuoteToFirestore = async () => {
-    if (!businessId || cart.length === 0) return;
+    if (!businessId || cart.length === 0 || !auth.currentUser) return;
     try {
-      await addDoc(collection(db, 'orcamentos'), {
+      await addDoc(collection(db, 'usuarios', businessId, 'orcamentos'), {
         userId: businessId,
-        clientName: clientInfo.name,
-        clientPhone: clientInfo.phone,
-        items: cart.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.salePrice })),
-        total,
+        clientName: clientInfo.name.trim().toUpperCase(),
+        clientPhone: clientInfo.phone.trim(),
+        items: cart.map(i => ({ 
+          id: i.id, 
+          name: i.name, 
+          quantity: Number(i.quantity) || 0, 
+          price: Number(i.salePrice) || 0 
+        })),
+        total: Number(total),
         createdBy: auth.currentUser?.uid,
         createdAt: new Date().toISOString()
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving quote:", err);
     }
   };

@@ -33,6 +33,10 @@ export default function Clients({ role, businessId }: { role?: string | null, bu
   const [searchTerm, setSearchTerm] = useState('');
   const [editingClient, setEditingClient] = useState<any>(null);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const isAdmin = role === 'admin';
 
   const [formData, setFormData] = useState({
@@ -44,37 +48,72 @@ export default function Clients({ role, businessId }: { role?: string | null, bu
 
   useEffect(() => {
     if (!businessId) return;
-    const q = query(collection(db, 'clientes'), where('userId', '==', businessId));
+    const q = query(collection(db, 'usuarios', businessId, 'clientes'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      console.error("Erro no onSnapshot de clientes:", err);
     });
     return () => unsubscribe();
   }, [businessId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessId) return;
+    if (!auth.currentUser) {
+      setError("Usuário não autenticado.");
+      return;
+    }
+    if (!businessId) {
+      setError("ID da empresa não encontrado.");
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      setError("O nome do cliente é obrigatório.");
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setSuccessMessage(null);
 
     try {
       const data = { 
-        ...formData, 
+        name: formData.name.trim().toUpperCase(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim().toUpperCase(),
+        observations: formData.observations.trim(),
         userId: businessId,
         updatedBy: auth.currentUser?.uid,
         updatedAt: new Date().toISOString()
       };
+      
       if (editingClient) {
-        await updateDoc(doc(db, 'clientes', editingClient.id), data);
+        await updateDoc(doc(db, 'usuarios', businessId, 'clientes', editingClient.id), data);
+        setSuccessMessage("Cliente atualizado!");
       } else {
-        await addDoc(collection(db, 'clientes'), {
+        await addDoc(collection(db, 'usuarios', businessId, 'clientes'), {
           ...data,
           createdBy: auth.currentUser?.uid,
           createdAt: new Date().toISOString()
         });
+        setSuccessMessage("Cliente cadastrado!");
       }
-      setModalOpen(false);
-      resetForm();
-    } catch (error) {
-      console.error(error);
+
+      setTimeout(() => {
+        setModalOpen(false);
+        setSuccessMessage(null);
+        resetForm();
+      }, 1500);
+    } catch (err: any) {
+      console.error("Erro ao salvar cliente:", err);
+      if (err.code === 'permission-denied') {
+        setError("Sem permissão para salvar.");
+      } else {
+        setError("Erro ao salvar cliente no banco.");
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -143,7 +182,16 @@ export default function Clients({ role, businessId }: { role?: string | null, bu
                    </button>
                    {isAdmin && (
                      <button 
-                      onClick={async () => { if(confirm('Excluir cliente?')) await deleteDoc(doc(db, 'clientes', client.id)) }}
+                      onClick={async () => { 
+                        if(confirm('Excluir cliente?')) {
+                          try {
+                            await deleteDoc(doc(db, 'usuarios', businessId!, 'clientes', client.id)) 
+                          } catch (err) {
+                            console.error(err);
+                            alert("Erro ao excluir cliente.");
+                          }
+                        }
+                      }}
                       className="p-1.5 text-zinc-700 hover:text-brand-red transition-colors"
                      >
                        <Trash2 className="w-4 h-4" />
@@ -190,22 +238,42 @@ export default function Clients({ role, businessId }: { role?: string | null, bu
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4 font-sans">
-                   <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-zinc-600 tracking-widest ml-1">Nome Completo</label>
-                      <input required type="text" className="w-full bg-black/20 border border-zinc-900 rounded-xl p-4 text-white focus:border-brand-red/30 outline-none font-black uppercase text-xs transition-all" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value.toUpperCase()})} />
-                   </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-zinc-600 tracking-widest ml-1">Telefone / WhatsApp</label>
-                      <input required type="tel" className="w-full bg-black/20 border border-zinc-900 rounded-xl p-4 text-white focus:border-brand-red/30 outline-none font-black text-xs placeholder:text-zinc-800 transition-all" placeholder="21999999999" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} />
-                   </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-zinc-600 tracking-widest ml-1">Endereço de Entrega</label>
-                      <textarea className="w-full bg-black/20 border border-zinc-900 rounded-xl p-4 text-white focus:border-brand-red/30 outline-none font-black text-xs h-24 resize-none transition-all uppercase" placeholder="RUA, NÚMERO, BAIRRO..." value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value.toUpperCase()})} />
-                   </div>
-                   <button type="submit" className="w-full bg-brand-red text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all mt-6 border-t border-white/10">
-                      {editingClient ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR CLIENTE'}
-                   </button>
-                </form>
+                    <AnimatePresence>
+                      {error && (
+                        <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} exit={{opacity:0}} className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl flex items-center gap-3 text-rose-500">
+                           <span className="text-[9px] font-black uppercase tracking-widest">{error}</span>
+                        </motion.div>
+                      )}
+                      {successMessage && (
+                        <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} exit={{opacity:0}} className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex items-center gap-3 text-emerald-500">
+                           <span className="text-[9px] font-black uppercase tracking-widest">{successMessage}</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <div className="space-y-1.5">
+                       <label className="text-[9px] font-black uppercase text-zinc-600 tracking-widest ml-1">Nome Completo</label>
+                       <input required type="text" className="w-full bg-black/20 border border-zinc-900 rounded-xl p-4 text-white focus:border-brand-red/30 outline-none font-black uppercase text-xs transition-all" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value.toUpperCase()})} />
+                    </div>
+                    <div className="space-y-1.5">
+                       <label className="text-[9px] font-black uppercase text-zinc-600 tracking-widest ml-1">Telefone / WhatsApp</label>
+                       <input required type="tel" className="w-full bg-black/20 border border-zinc-900 rounded-xl p-4 text-white focus:border-brand-red/30 outline-none font-black text-xs placeholder:text-zinc-800 transition-all" placeholder="21999999999" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} />
+                    </div>
+                    <div className="space-y-1.5">
+                       <label className="text-[9px] font-black uppercase text-zinc-600 tracking-widest ml-1">Endereço de Entrega</label>
+                       <textarea className="w-full bg-black/20 border border-zinc-900 rounded-xl p-4 text-white focus:border-brand-red/30 outline-none font-black text-xs h-24 resize-none transition-all uppercase" placeholder="RUA, NÚMERO, BAIRRO..." value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value.toUpperCase()})} />
+                    </div>
+                    <button 
+                      disabled={isSaving}
+                      type="submit" 
+                      className={cn(
+                        "w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all mt-6 border-t border-white/10",
+                        isSaving ? "bg-zinc-800 text-zinc-500" : "bg-brand-red text-white"
+                      )}
+                    >
+                       {isSaving ? 'SALVANDO...' : (editingClient ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR CLIENTE')}
+                    </button>
+                 </form>
              </motion.div>
           </div>
         )}

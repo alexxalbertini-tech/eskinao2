@@ -55,8 +55,7 @@ export default function Dashboard({ businessId }: { role?: string | null, busine
     today.setHours(0, 0, 0, 0);
 
     const q = query(
-      collection(db, 'caixa'),
-      where('userId', '==', businessId),
+      collection(db, 'usuarios', businessId, 'caixa'),
       where('date', '>=', today.toISOString()),
       orderBy('date', 'desc')
     );
@@ -81,9 +80,9 @@ export default function Dashboard({ businessId }: { role?: string | null, busine
         profitToday: income * 0.35, // Premium Margin logic
       }));
       setRecentTransactions(txs.slice(0, 5));
-    });
+    }, (err) => console.error("Erro no dashboard (caixa):", err));
 
-    const stockQ = query(collection(db, 'produtos'), where('userId', '==', businessId));
+    const stockQ = query(collection(db, 'usuarios', businessId, 'produtos'));
     const unsubscribeStore = onSnapshot(stockQ, (snapshot) => {
       let low = 0;
       snapshot.forEach(doc => {
@@ -91,17 +90,17 @@ export default function Dashboard({ businessId }: { role?: string | null, busine
         if (data.quantity <= (data.alertThreshold || 5)) low++;
       });
       setStats(prev => ({ ...prev, lowStock: low }));
-    });
+    }, (err) => console.error("Erro no dashboard (produtos):", err));
 
-    const rentalsQ = query(collection(db, 'alugueis'), where('userId', '==', businessId), where('status', '==', 'pending'));
+    const rentalsQ = query(collection(db, 'usuarios', businessId, 'alugueis'), where('status', '==', 'pending'));
     const unsubscribeRentals = onSnapshot(rentalsQ, (snapshot) => {
       setStats(prev => ({ ...prev, pendingRentals: snapshot.size }));
-    });
+    }, (err) => console.error("Erro no dashboard (alugueis):", err));
 
-    const deliveriesQ = query(collection(db, 'entregas'), where('userId', '==', businessId), where('status', 'in', ['pending', 'preparing', 'shipped']));
+    const deliveriesQ = query(collection(db, 'usuarios', businessId, 'entregas'), where('status', 'in', ['pending', 'preparing', 'shipped']));
     const unsubscribeDeliveries = onSnapshot(deliveriesQ, (snapshot) => {
       setStats(prev => ({ ...prev, pendingDeliveries: snapshot.size }));
-    });
+    }, (err) => console.error("Erro no dashboard (entregas):", err));
 
     return () => {
       unsubscribe();

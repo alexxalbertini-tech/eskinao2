@@ -41,15 +41,17 @@ export default function Reports({ businessId }: { role?: string | null, business
   useEffect(() => {
     if (!businessId) return;
 
-    const unsubscribeTxs = onSnapshot(query(collection(db, 'vendas'), where('userId', '==', businessId)), (snap) => {
+    const unsubscribeTxs = onSnapshot(query(collection(db, 'usuarios', businessId, 'vendas')), (snap) => {
       setData(prev => ({ ...prev, transactions: snap.docs.map(doc => doc.data()) }));
-    });
-    const unsubscribeProd = onSnapshot(query(collection(db, 'produtos'), where('userId', '==', businessId)), (snap) => {
+    }, (err) => console.error("Erro reports (vendas):", err));
+
+    const unsubscribeProd = onSnapshot(query(collection(db, 'usuarios', businessId, 'produtos')), (snap) => {
       setData(prev => ({ ...prev, products: snap.docs.map(doc => doc.data()) }));
-    });
-    const unsubscribeRent = onSnapshot(query(collection(db, 'alugueis'), where('userId', '==', businessId)), (snap) => {
+    }, (err) => console.error("Erro reports (produtos):", err));
+
+    const unsubscribeRent = onSnapshot(query(collection(db, 'usuarios', businessId, 'alugueis')), (snap) => {
       setData(prev => ({ ...prev, rentals: snap.docs.map(doc => doc.data()) }));
-    });
+    }, (err) => console.error("Erro reports (alugueis):", err));
 
     return () => {
       unsubscribeTxs();

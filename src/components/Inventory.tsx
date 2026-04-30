@@ -66,24 +66,36 @@ export default function Inventory({ businessId }: { role?: string | null, busine
 
   useEffect(() => {
     if (!businessId) return;
-    const q = query(collection(db, 'produtos'), where('userId', '==', businessId));
+    const q = query(collection(db, 'usuarios', businessId, 'produtos'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(data);
       setLoading(false);
+    }, (err) => {
+      console.error("Erro no onSnapshot de produtos:", err);
+      setError("Erro ao carregar produtos em tempo real.");
     });
     return () => unsubscribe();
   }, [businessId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessId) return;
+    
+    if (!auth.currentUser) {
+      setError("Usuário não autenticado. Por favor, faça login novamente.");
+      return;
+    }
+
+    if (!businessId) {
+      setError("ID da empresa não encontrado.");
+      return;
+    }
 
     // LIMPEZA E VALIDAÇÃO DE DADOS
-    const quantity = Number(formData.quantity);
-    const costPrice = Number(formData.costPrice);
-    const salePrice = Number(formData.salePrice);
-    const alertThreshold = Number(formData.alertThreshold);
+    const quantity = Number(formData.quantity) || 0;
+    const costPrice = Number(formData.costPrice) || 0;
+    const salePrice = Number(formData.salePrice) || 0;
+    const alertThreshold = Number(formData.alertThreshold) || 5;
 
     if (isNaN(quantity) || isNaN(costPrice) || isNaN(salePrice)) {
       setError("Por favor, insira valores numéricos válidos.");
@@ -102,7 +114,7 @@ export default function Inventory({ businessId }: { role?: string | null, busine
     const data = { 
       name: formData.name.trim().toUpperCase(),
       category: formData.category,
-      quantity: quantity,
+      quantity: Math.max(0, quantity),
       costPrice: costPrice,
       salePrice: salePrice,
       supplier: formData.supplier.trim() || 'Não Informado',
@@ -114,10 +126,10 @@ export default function Inventory({ businessId }: { role?: string | null, busine
 
     try {
       if (editingProduct) {
-        await updateDoc(doc(db, 'produtos', editingProduct.id), data);
+        await updateDoc(doc(db, 'usuarios', businessId, 'produtos', editingProduct.id), data);
         setSuccessMessage("Produto atualizado com sucesso!");
       } else {
-        await addDoc(collection(db, 'produtos'), {
+        await addDoc(collection(db, 'usuarios', businessId, 'produtos'), {
           ...data,
           createdBy: auth.currentUser?.uid,
           createdAt: new Date().toISOString()
@@ -125,7 +137,7 @@ export default function Inventory({ businessId }: { role?: string | null, busine
         setSuccessMessage("Produto adicionado com sucesso!");
       }
       
-      // Auto-fechar modal após sucesso (opcional, mas bom feedback)
+      // Auto-fechar modal após sucesso
       setTimeout(() => {
         setModalOpen(false);
         setSuccessMessage(null);
@@ -134,15 +146,27 @@ export default function Inventory({ businessId }: { role?: string | null, busine
 
     } catch (err: any) {
       console.error("Erro ao salvar produto:", err);
-      setError("Erro ao salvar no banco de dados. Verifique sua conexão.");
+      if (err.code === 'permission-denied') {
+        setError("Sem permissão para salvar. Entre em contato com o suporte.");
+      } else if (err.code === 'unauthenticated') {
+        setError("Sessão expirada. Faça login novamente.");
+      } else {
+        setError(`Erro: ${err.message || 'Erro desconhecido ao salvar.'}`);
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
   const deleteProduct = async (id: string) => {
+    if (!businessId) return;
     if (confirm('Deseja realmente excluir este produto?')) {
-      await deleteDoc(doc(db, 'produtos', id));
+      try {
+        await deleteDoc(doc(db, 'usuarios', businessId, 'produtos', id));
+      } catch (err: any) {
+        console.error("Erro ao deletar:", err);
+        alert("Erro ao excluir produto.");
+      }
     }
   };
 
@@ -152,11 +176,25 @@ export default function Inventory({ businessId }: { role?: string | null, busine
   };
 
   const adjustStock = async (id: string, currentQty: number, amount: number) => {
+    if (!businessId || !auth.currentUser) return;
     try {
-      const productRef = doc(db, 'produtos', id);
+      const productRef = doc(db, 'usuarios', businessId, 'produtos', id);
+      const newQty = Math.max(0, currentQty + amount);
+      
       await updateDoc(productRef, {
-        quantity: Math.max(0, currentQty + amount),
+        quantity: newQty,
         updatedAt: new Date().toISOString()
+      });
+
+      // Registrar movimento no estoque (log)
+      await addDoc(collection(db, 'usuarios', businessId, 'estoque'), {
+        productId: id,
+        type: amount > 0 ? 'in' : 'out',
+        amount: Math.abs(amount),
+        previousQty: currentQty,
+        newQty: newQty,
+        createdBy: auth.currentUser.uid,
+        createdAt: new Date().toISOString()
       });
     } catch (error) {
       console.error("Erro ao ajustar estoque:", error);
